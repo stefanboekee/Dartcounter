@@ -23,6 +23,19 @@ function startSpel(aantal) {
   container.innerHTML = '';
   document.getElementById("setup").style.display = 'none';
   document.getElementById("namenSetup").style.display = 'none';
+
+  // Voeg knop 'Stop spel' toe
+  const stopKnop = document.createElement("button");
+  stopKnop.textContent = "Stop spel";
+  stopKnop.style.margin = "20px auto";
+  stopKnop.style.display = "block";
+  stopKnop.onclick = function() {
+    if(confirm("Weet je zeker dat je het spel wilt stoppen?")) {
+      resetSpel();
+    }
+  };
+  container.appendChild(stopKnop);
+
   spelers = [];
   beurt = 0;
   sessieGeschiedenis = [];
@@ -39,31 +52,61 @@ function startSpel(aantal) {
   renderSpel();
 }
 
+function resetSpel() {
+  spelers = [];
+  beurt = 0;
+  sessieGeschiedenis = [];
+  document.getElementById("spel").innerHTML = '';
+  document.getElementById("setup").style.display = 'block';
+  document.getElementById("namenSetup").style.display = 'block';
+  document.getElementById("namenSetup").innerHTML = '';
+  document.getElementById("statistiekenLijst").innerHTML = '';
+}
+
 function renderSpel() {
   const container = document.getElementById("spel");
+
+  // Zorg dat knop 'Stop spel' altijd bovenaan staat
+  let stopKnop = container.querySelector("button");
+  if (!stopKnop) {
+    stopKnop = document.createElement("button");
+    stopKnop.textContent = "Stop spel";
+    stopKnop.style.margin = "20px auto";
+    stopKnop.style.display = "block";
+    stopKnop.onclick = function() {
+      if(confirm("Weet je zeker dat je het spel wilt stoppen?")) {
+        resetSpel();
+      }
+    };
+    container.appendChild(stopKnop);
+  }
+
+  // Maak ruimte onder knop vrij voor spelers
   container.innerHTML = '';
+  container.appendChild(stopKnop);
 
   spelers.forEach((speler, index) => {
     const div = document.createElement("div");
     div.className = "speler" + (index === beurt ? " aan-de-beurt" : "");
     const avg = speler.geschiedenis.length ? (gemiddelde(speler.geschiedenis).toFixed(1)) : 0;
+
     div.innerHTML = `
       <h2>${speler.naam}</h2>
-      <p>Score: <strong>${speler.score}</strong></p>
+      <div class="grote-score">${speler.score}</div>
       <p>Legs gewonnen: ${speler.legsGewonnen}/${legsTeWinnen}</p>
-      <p>Gemiddelde score (3 pijlen): ${avg}</p>
+      <p>Gemiddelde score: ${avg}</p>
       <p>Checkout hint: <strong>${getCheckoutHint(speler.score)}</strong></p>
       <p class="geschiedenis">Geschiedenis: ${speler.geschiedenis.join(", ")}</p>
       ${index === beurt ? `
-      <div class="grote-score">Score: ${speler.score}</div>
-      <div class="grote-score">Checkout: ${getCheckoutHint(speler.score)}</div>
       <label for="invoer">Score invoeren:</label>
       <input id="invoer" type="number" min="0" max="180" onkeydown="if(event.key==='Enter'){verwerkBeurt(${index})}">
       <button onclick="verwerkBeurt(${index})">Bevestig beurt</button>
       ` : ''}
     `;
+
     container.appendChild(div);
   });
+
   updateStatistieken();
 }
 
@@ -123,19 +166,20 @@ function getCheckoutHint(score) {
     118: "T20, 18, D20", 117: "T20, 17, D20", 116: "T20, 16, D20", 115: "T20, 15, D20",
     114: "T20, 14, D20", 113: "T20, 13, D20", 112: "T20, 12, D20", 111: "T20, 11, D20",
     110: "T20, 10, D20", 109: "T20, 9, D20", 108: "T20, 8, D20", 107: "T19, 10, D20",
-    106: "T20, 6, D20", 105: "T20, 5, D20", 104: "T18, 10, D20", 103: "T17, 12, D20",
-    102: "T20, 10, D16", 101: "T17, 10, D20", 100: "T20, D20"
+    106: "T20, 6, D20", 105: "T20, 5, D20", 104: "T18, 18, D16", 103: "T20, 3, D20",
+    102: "T20, 10, D16", 101: "T17, 10, D20", 100: "T20, D20",
   };
   return hints[score] || "-";
 }
 
 function updateStatistieken() {
   const lijst = document.getElementById("statistiekenLijst");
-  lijst.innerHTML = '';
-  sessieGeschiedenis.forEach(item => {
-    const li = document.createElement("li");
-    li.textContent = item;
-    lijst.appendChild(li);
-  });
-}
+  if (!lijst) return;
 
+  lijst.innerHTML = `<h2>Spelsessie Geschiedenis</h2>`;
+  if (sessieGeschiedenis.length === 0) {
+    lijst.innerHTML += "<p>Geen acties tot nu toe.</p>";
+  } else {
+    lijst.innerHTML += "<ul>" + sessieGeschiedenis.map(e => `<li>${e}</li>`).join("") + "</ul>";
+  }
+}

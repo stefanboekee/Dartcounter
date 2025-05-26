@@ -6,22 +6,32 @@ body {
   background: #f0f0f0;
 }
 
-h1,
-h2 {
+h1, h2 {
   text-align: center;
+}
+
+#spel {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .speler {
   border: 1px solid #ccc;
   padding: 10px;
-  margin: 10px 0;
   background: #fff;
   border-radius: 8px;
+  flex: 1 1 200px;
+  max-width: 250px;
+  box-sizing: border-box;
+  font-weight: normal;
 }
 
 .speler.aan-de-beurt {
   border: 2px solid #007bff;
   background: #e0f0ff;
+  font-weight: bold;
 }
 
 label {
@@ -52,9 +62,10 @@ button {
 }
 
 .grote-score {
-  font-size: 2em;
+  font-size: 3em;
   font-weight: bold;
   margin-top: 10px;
+  text-align: center;
 }
 
 .statistieken {
