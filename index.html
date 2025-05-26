@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dartcounter</title>
+   <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Dartcounter</h1>
+  <div id="setup">
+    <label for="aantalSpelers">Aantal spelers (max 6):</label>
+    <input type="number" id="aantalSpelers" min="1" max="6" value="2">
+    <label for="aantalLegs">Aantal legs te winnen:</label>
+    <input type="number" id="aantalLegs" min="1" max="10" value="3">
+    <button onclick="setupNamen()">Volgende</button>
+  </div>
+  <div id="namenSetup"></div>
+  <div id="spel"></div>
+  <div class="statistieken" id="statistieken">
+    <h2>Statistieken sessie</h2>
+    <ul id="statistiekenLijst"></ul>
+  </div>
+  <script src="script.js"></script>
+
+</body>
+</html>
