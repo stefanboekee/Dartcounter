@@ -128,13 +128,20 @@ function verwerkBeurt(index) {
     alert("Busted! Score is te hoog of eindigt op 1. Beurt telt niet.");
   } else if (nieuweScore === 0) {
     speler.geschiedenis.push(score);
-    speler.score = 501;
     speler.legsGewonnen++;
+
+    // Reset scores en geschiedenis van alle spelers
+    spelers.forEach(s => {
+      s.score = 501;
+      s.geschiedenis = [];
+    });
+
     sessieGeschiedenis.push(`${speler.naam} wint een leg met een finish van ${score}`);
+
     if (speler.legsGewonnen >= legsTeWinnen) {
       alert(`${speler.naam} heeft het spel gewonnen!`);
       sessieGeschiedenis.push(`${speler.naam} wint de sessie`);
-      spelers.forEach(s => { s.score = 501; s.geschiedenis = []; });
+      // Hier kun je eventueel het spel pauzeren of resetten
     }
   } else {
     speler.geschiedenis.push(score);
