@@ -4,25 +4,38 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dartcounter V1</title>
-   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Dartcounter V1</h1>
-  <div id="setup">
+  <h1>Dartscore V1</h1>
+  <div id="keuzeMode">
+    <h2>Kies spelmodus:</h2>
+    <button onclick="selecteerModus('single')">Single player</button>
+    <button onclick="selecteerModus('teams')">Teams</button>
+  </div>
+
+  <div id="setup" style="display: none;">
     <label for="aantalSpelers">Aantal spelers (max 6):</label>
-    <input type="number" id="aantalSpelers" min="1" max="6" value="2">
+    <input type="number" id="aantalSpelers" min="1" max="6" value="2" class="compact-input">
     <label for="aantalLegs">Aantal legs te winnen:</label>
-    <input type="number" id="aantalLegs" min="1" max="10" value="3">
+    <input type="number" id="aantalLegs" min="1" max="10" value="3" class="compact-input">
     <button onclick="setupNamen()">Volgende</button>
   </div>
+
+  <div id="teamSetup" style="display: none;"></div>
   <div id="namenSetup"></div>
-  <div id="spel"></div>
-  <button id="stopSpelKnop" style="display:none;" onclick="stopSpel()">Stop spel</button>
+  <div id="spel" class="flex-container"></div>
+
   <div class="statistieken" id="statistieken">
     <h2>Statistieken sessie</h2>
     <ul id="statistiekenLijst"></ul>
   </div>
-  <script src="script.js"></script>
 
+  <div id="controls" style="margin-top: 20px; text-align: center;">
+    <button onclick="stopSpel()">Stop spel</button>
+    <button onclick="herstelLaatsteScore()">Herstel laatste invoer</button>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
