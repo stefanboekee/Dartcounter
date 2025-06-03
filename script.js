@@ -229,6 +229,9 @@ function verwerkBeurt(index) {
     return;
   }
 
+  let audio = new Audio(`sounds/${score}.wav`);
+  audio.play().catch(() => {});
+
   const speler = spelers[index];
   const nieuweScore = speler.score - score;
   vorigeScore = { index, score };
@@ -263,7 +266,7 @@ function getCheckoutHint(score) {
   const hints = {
  170: "T20, T20, Bull", 167: "T20, T19, Bull", 164: "T20, T18, Bull", 161: "T20, T17, Bull",
     160: "T20, T20, D20", 158: "T20, T20, D19", 157: "T20, T19, D20", 156: "T20, T20, D18",
-    155: "T20, T19, D19", 153: "T20, T19, D18", 152: "T20, T20, D16", 151: "T20, T17, D20",
+    155: "T20, T19, D19", 154: "T20. T18, D20", 153: "T20, T19, D18", 152: "T20, T20, D16", 151: "T20, T17, D20",
     150: "T20, T18, D18", 149: "T20, T19, D16", 148: "T20, T16, D20", 147: "T20, T17, D18",
     146: "T20, T18, D16", 145: "T20, T15, D20", 144: "T20, T20, D12", 143: "T20, T17, D16",
     142: "T20, T14, D20", 141: "T20, T19, D12", 140: "T20, T20, D10", 139: "T20, T13, D20",
