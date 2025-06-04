@@ -232,7 +232,7 @@ function verwerkBeurt(index) {
     return;
   }
 
-  let audio = new Audio(`sounds/${score}.wav`);
+  let audio = new Audio(`${score}.wav`);
   audio.play().catch(() => {});
 
   const speler = spelers[index];
