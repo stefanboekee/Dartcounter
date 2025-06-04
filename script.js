@@ -8,6 +8,8 @@ let startVolgordeIndex = 0;
 let vorigeScore = null;
 let teamBeurtIndex = 0;
 let startScore = 501;
+let herstelGeschiedenis = []; // stapel voor meerdere herstelslagen
+const ongeldigeScores = [179, 178, 176, 175, 173, 172, 169, 166, 163];
 
 function selecteerModus(mode) {
   document.getElementById("keuzeMode").style.display = 'none';
@@ -125,6 +127,7 @@ function verwerkTeamBeurt(tIndex) {
 
   const team = teams[tIndex];
   const nieuweScore = team.score - score;
+  herstelGeschiedenis.push({ team: tIndex, score, spelerIndex });
   vorigeScore = { team: tIndex, score };
 
   if (nieuweScore === 0) {
@@ -235,6 +238,7 @@ function verwerkBeurt(index) {
   const speler = spelers[index];
   const nieuweScore = speler.score - score;
   vorigeScore = { index, score };
+  herstelGeschiedenis.push({ index, score });
 
   if (nieuweScore === 0) {
     speler.legsGewonnen++;
@@ -300,25 +304,28 @@ function getCheckoutHint(score) {
   return hints[score] || "-";
 }
 
-function updateStatistieken() {
-  const lijst = document.getElementById("statistiekenLijst");
-  lijst.innerHTML = sessieGeschiedenis.map(item => `<li>${item}</li>`).join('');
-}
-
 function herstelLaatsteScore() {
-  if (teamMode && vorigeScore?.team !== undefined) {
-    const t = teams[vorigeScore.team];
-    t.score += vorigeScore.score;
-    beurt = vorigeScore.team;
-    renderTeamSpel();
-  } else if (!teamMode && vorigeScore?.index !== undefined) {
-    const s = spelers[vorigeScore.index];
-    s.score += vorigeScore.score;
-    s.geschiedenis.pop();
-    beurt = vorigeScore.index;
-    renderSpel();
-  } else {
+  if (herstelGeschiedenis.length === 0) {
     alert("Niets om te herstellen.");
+    return;
+  }
+
+  const laatste = herstelGeschiedenis.pop();
+
+  if (teamMode && laatste?.team !== undefined) {
+    const t = teams[laatste.team];
+    t.score = Math.min(t.score + laatste.score, startScore);
+    beurt = laatste.team;
+    teamBeurtIndex = Math.max(0, laatste.spelerIndex);
+    sessieGeschiedenis.push(`Herstel: ${t.spelers[teamBeurtIndex % t.spelers.length]} (${t.naam}) is weer aan de beurt.`);
+    renderTeamSpel();
+  } else if (!teamMode && laatste?.index !== undefined) {
+    const s = spelers[laatste.index];
+    s.score = Math.min(s.score + laatste.score, startScore);
+    if (s.geschiedenis.length) s.geschiedenis.pop();
+    beurt = laatste.index;
+    sessieGeschiedenis.push(`Herstel: ${s.naam} is weer aan de beurt.`);
+    renderSpel();
   }
 }
 
