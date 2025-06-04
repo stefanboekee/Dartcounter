@@ -124,6 +124,8 @@ function verwerkTeamBeurt(tIndex) {
     input.focus();
     return;
   }
+  let audio = new Audio(`${score}.wav`);
+  audio.play().catch(() => {});
 
   const team = teams[tIndex];
   const spelerIndex = teamBeurtIndex % team.spelers.length;
