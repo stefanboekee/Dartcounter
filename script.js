@@ -118,7 +118,7 @@ function renderTeamSpel() {
 function verwerkTeamBeurt(tIndex) {
   const input = document.getElementById("invoer");
   const score = parseInt(input.value);
-  if (isNaN(score) || score < 0 || score > 180) {
+  if (isNaN(score) || score < 0 || score > 180 || ongeldigeScores.includes(score)) {
     alert("Voer een geldige score in tussen 0 en 180.");
     input.value = '';
     input.focus();
@@ -126,9 +126,11 @@ function verwerkTeamBeurt(tIndex) {
   }
 
   const team = teams[tIndex];
-  const nieuweScore = team.score - score;
+  const spelerIndex = teamBeurtIndex % team.spelers.length;
+
   herstelGeschiedenis.push({ team: tIndex, score, spelerIndex });
-  vorigeScore = { team: tIndex, score };
+
+  const nieuweScore = team.score - score;
 
   if (nieuweScore === 0) {
     team.legsGewonnen++;
@@ -152,6 +154,7 @@ function verwerkTeamBeurt(tIndex) {
   input.value = '';
   renderTeamSpel();
 }
+
 
 function setupNamen() {
   const aantal = parseInt(document.getElementById("aantalSpelers").value);
