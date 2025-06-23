@@ -114,9 +114,11 @@ function renderTeamSpel() {
         if (e.key === "Backspace") input.value = '';
       });
     }
-    if (teams[beurt].score <= 170) {
-      let audio = new Audio(`sounds/${teams[beurt].score}.mp3`);
-      audio.play().catch(() => {});
+ if (teams[beurt].score <= 170) {
+  const intro = new Audio('sounds/your_score_is.mp3');
+  const scoreAudio = new Audio(`sounds/${teams[beurt].score}.mp3`);
+  intro.onended = () => scoreAudio.play().catch(() => {});
+  intro.play().catch(() => {});
     }
   }, 0);
 
@@ -237,8 +239,10 @@ function renderSpel() {
       });
     }
     if (spelers[beurt].score <= 170) {
-      let audio = new Audio(`sounds/${spelers[beurt].score}.mp3`);
-      audio.play().catch(() => {});
+  const intro = new Audio('sounds/your_score_is.mp3');
+  const scoreAudio = new Audio(`sounds/${spelers[beurt].score}.mp3`);
+  intro.onended = () => scoreAudio.play().catch(() => {});
+  intro.play().catch(() => {});
     }
   }, 0);
 
