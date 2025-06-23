@@ -91,6 +91,7 @@ function renderTeamSpel() {
       <h2>${spelerNaam} (${team.naam})</h2>
       <div class="grote-score">${team.score}</div>
       <p>Legs gewonnen: ${team.legsGewonnen}/${legsTeWinnen}</p>
+      <p>Pijlen gegooid: ${team.pijlenGegooid || 0}</p>
       <p>Checkout hint: <strong>${getCheckoutHint(team.score)}</strong></p>
       ${isBeurt ? `
         <label for="invoer">Score invoeren:</label>
@@ -106,9 +107,16 @@ function renderTeamSpel() {
     if (input) {
       input.focus();
       input.addEventListener("keydown", function(e) {
-        if (e.key === "Enter") verwerkTeamBeurt(beurt);
+        if (e.key === "Enter") {
+          if (input.value.trim() === "") input.value = "0";
+          verwerkTeamBeurt(beurt);
+        }
         if (e.key === "Backspace") input.value = '';
       });
+    }
+    if (teams[beurt].score <= 170) {
+      let audio = new Audio(`sounds/${teams[beurt].score}.mp3`);
+      audio.play().catch(() => {});
     }
   }, 0);
 
@@ -134,6 +142,9 @@ function verwerkTeamBeurt(tIndex) {
 
   const nieuweScore = team.score - score;
 
+  if (!team.pijlenGegooid) team.pijlenGegooid = 0;
+  team.pijlenGegooid += 3;
+
   if (nieuweScore === 0) {
     team.legsGewonnen++;
     sessieGeschiedenis.push(`${team.naam} wint een leg!`);
@@ -156,7 +167,6 @@ function verwerkTeamBeurt(tIndex) {
   input.value = '';
   renderTeamSpel();
 }
-
 
 function setupNamen() {
   const aantal = parseInt(document.getElementById("aantalSpelers").value);
@@ -202,6 +212,7 @@ function renderSpel() {
       <div class="grote-score">${speler.score}</div>
       <p>Legs gewonnen: ${speler.legsGewonnen}/${legsTeWinnen}</p>
       <p>Gemiddelde score: ${avg}</p>
+      <p>Pijlen gegooid: ${speler.pijlenGegooid || 0}</p>
       <p>Checkout hint: <strong>${getCheckoutHint(speler.score)}</strong></p>
       <p class="geschiedenis">Geschiedenis: ${speler.geschiedenis.join(", ")}</p>
       ${index === beurt ? `
@@ -218,9 +229,16 @@ function renderSpel() {
     if (input) {
       input.focus();
       input.addEventListener("keydown", function(e) {
-        if (e.key === "Enter") verwerkBeurt(beurt);
+        if (e.key === "Enter") {
+          if (input.value.trim() === "") input.value = "0";
+          verwerkBeurt(beurt);
+        }
         if (e.key === "Backspace") input.value = '';
       });
+    }
+    if (spelers[beurt].score <= 170) {
+      let audio = new Audio(`sounds/${spelers[beurt].score}.mp3`);
+      audio.play().catch(() => {});
     }
   }, 0);
 
@@ -244,6 +262,9 @@ function verwerkBeurt(index) {
   const nieuweScore = speler.score - score;
   vorigeScore = { index, score };
   herstelGeschiedenis.push({ index, score });
+
+  if (!speler.pijlenGegooid) speler.pijlenGegooid = 0;
+  speler.pijlenGegooid += 3;
 
   if (nieuweScore === 0) {
     speler.legsGewonnen++;
