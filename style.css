@@ -24,9 +24,10 @@ h1, h2, h3 {
 }
 
 .flex-container {
+  top: 300px;
   display: flex;
   flex-wrap: nowrap;
-  gap: 20px;
+  gap: 10px;
   justify-content: center;
   overflow-x: auto; /* Voor scrollbaarheid als er veel spelers zijn */
   padding-bottom: 10px;
@@ -148,3 +149,11 @@ button:hover {
 .scoreknop:hover {
   background-color: #218838;
 }
+
+.naam-input {
+  width: 200px;   /* Pas dit getal aan zoals je wilt, bijv. 250px of 50% */
+  max-width: 90%; /* Zorgt dat het niet te breed wordt op mobiel */
+  margin: 5px auto;
+  display: block;
+}
+
