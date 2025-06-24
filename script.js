@@ -11,6 +11,11 @@ let startScore = 501;
 let herstelGeschiedenis = []; // stapel voor meerdere herstelslagen
 const ongeldigeScores = [179, 178, 176, 175, 173, 172, 169, 166, 163];
 
+function speelStartGeluid() {
+  const audio = new Audio('Gameon.mp3');
+  audio.play().catch(() => {});
+}
+
 function selecteerModus(mode) {
   document.getElementById("keuzeMode").style.display = 'none';
   const scoreKeuze = document.createElement("div");
@@ -92,6 +97,7 @@ function renderTeamSpel() {
       <div class="grote-score">${team.score}</div>
       <p>Legs gewonnen: ${team.legsGewonnen}/${legsTeWinnen}</p>
       <p>Pijlen gegooid: ${team.pijlenGegooid || 0}</p>
+      <p>Beste leg: ${team.besteLeg || '-'}</p>
       <p>Checkout hint: <strong>${getCheckoutHint(team.score)}</strong></p>
       ${isBeurt ? `
         <label for="invoer">Score invoeren:</label>
@@ -118,12 +124,8 @@ function renderTeamSpel() {
   const intro = new Audio('your_score_is.mp3');
   const scoreAudio = new Audio(`${teams[beurt].score}.mp3`);
   intro.onended = () => scoreAudio.play().catch(() => {});
- 
- // Wacht voordat je het intro-geluid afspeelt
-  setTimeout(() => {
-    intro.play().catch(() => {});
-  }, 2500);
-}
+  intro.play().catch(() => {});
+    }
   }, 0);
 
   updateStatistieken();
@@ -154,14 +156,19 @@ function verwerkTeamBeurt(tIndex) {
   if (nieuweScore === 0) {
     team.legsGewonnen++;
     sessieGeschiedenis.push(`${team.naam} wint een leg!`);
+
+    if (!team.besteLeg || team.pijlenGegooid < team.besteLeg) {
+      team.besteLeg = team.pijlenGegooid;
+    }
     if (team.legsGewonnen >= legsTeWinnen) {
       alert(`${team.naam} wint de sessie!`);
       stopSpel();
       return;
     }
-    teams.forEach(t => t.score = startScore);
+    teams.forEach(t => {t.score = startScore; t.pijlengegooid = 0});
     teamBeurtIndex++;
     beurt = startVolgordeIndex = (startVolgordeIndex + 1) % teams.length;
+    speelStartGeluid();
   } else if (nieuweScore < 0 || nieuweScore === 1) {
     alert("Bust!");
   } else {
@@ -219,6 +226,7 @@ function renderSpel() {
       <p>Legs gewonnen: ${speler.legsGewonnen}/${legsTeWinnen}</p>
       <p>Gemiddelde score: ${avg}</p>
       <p>Pijlen gegooid: ${speler.pijlenGegooid || 0}</p>
+      <p>Beste leg: ${speler.besteLeg || '-'}</p>
       <p>Checkout hint: <strong>${getCheckoutHint(speler.score)}</strong></p>
       <p class="geschiedenis">Geschiedenis: ${speler.geschiedenis.join(", ")}</p>
       ${index === beurt ? `
@@ -242,17 +250,6 @@ function renderSpel() {
         if (e.key === "Backspace") input.value = '';
       });
     }
-if (spelers[beurt].score <= 170) {
-  const intro = new Audio('your_score_is.mp3');
-  const scoreAudio = new Audio(`${spelers[beurt].score}.mp3`);
-  intro.onended = () => scoreAudio.play().catch(() => {});
-  
-  // Wacht 5 seconden voordat je het intro-geluid afspeelt
-  setTimeout(() => {
-    intro.play().catch(() => {});
-  }, 2500);
-}
-
   }, 0);
 
   updateStatistieken();
@@ -268,8 +265,16 @@ function verwerkBeurt(index) {
     return;
   }
 
-  let audio = new Audio(`${score}.wav`);
-  audio.play().catch(() => {});
+let audio = new Audio(`${score}.wav`);
+audio.play().catch(() => {});
+audio.onended = () => {
+  if (spelers[index].score <= 170) {
+    const intro = new Audio('sounds/your_score_is.mp3');
+    const scoreAudio = new Audio(`sounds/${spelers[index].score}.mp3`);
+    intro.onended = () => scoreAudio.play().catch(() => {});
+    intro.play().catch(() => {});
+}
+};
 
   const speler = spelers[index];
   const nieuweScore = speler.score - score;
@@ -282,13 +287,20 @@ function verwerkBeurt(index) {
   if (nieuweScore === 0) {
     speler.legsGewonnen++;
     sessieGeschiedenis.push(`${speler.naam} wint een leg!`);
+
+
+    if (!speler.besteLeg || speler.pijlenGegooid < speler.besteLeg) {
+      speler.besteLeg = speler.pijlenGegooid;
+    }
+
     if (speler.legsGewonnen >= legsTeWinnen) {
       alert(`${speler.naam} wint de sessie!`);
       stopSpel();
       return;
     }
-    spelers.forEach(s => { s.score = startScore; s.geschiedenis = []; });
+    spelers.forEach(s => { s.score = startScore; s.geschiedenis = []; s.pijlenGegooid = 0;});
     beurt = startVolgordeIndex = (startVolgordeIndex + 1) % spelers.length;
+    speelStartGeluid();
   } else if (nieuweScore < 0 || nieuweScore === 1) {
     alert("Bust!");
   } else {
