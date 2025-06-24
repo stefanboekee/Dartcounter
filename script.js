@@ -19,7 +19,8 @@ function speelStartGeluid() {
 function selecteerModus(mode) {
   document.getElementById("keuzeMode").style.display = 'none';
   const scoreKeuze = document.createElement("div");
-  scoreKeuze.className = "scoreselectie"; // voeg deze regel toe
+  scoreKeuze.id = "scoreKeuze";
+  scoreKeuze.className = "scoreselectie";
   scoreKeuze.innerHTML = `
     <h3>Kies startscore:</h3>
     <button onclick="selecteerStartScore('${mode}', 301)">301</button>
@@ -31,6 +32,7 @@ function selecteerModus(mode) {
 
 function selecteerStartScore(mode, score) {
   startScore = score;
+  document.getElementById("scoreKeuze")?.remove();
   if (mode === 'teams') {
     document.getElementById("setup").style.display = 'none';
     document.getElementById("teamSetup").innerHTML = `
