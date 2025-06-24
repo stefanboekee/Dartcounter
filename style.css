@@ -6,6 +6,19 @@ body {
   background: #f0f0f0;
 }
 
+.logo-container {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 9999;
+}
+
+.logo {
+  max-width: 200px;
+  height: auto;
+}
+
+
 h1, h2, h3 {
   text-align: center;
 }
