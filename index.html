@@ -3,20 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dartcounter V1</title>
+  <title>Dartcounter V1.1</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Dartscore V1</h1>
-  <div id="keuzeMode">
+  <h1>Dartcounter V1.1</h1>
+  <div id="keuzeMode" style="margin-top: 20px; text-align: center;">
     <h2>Kies spelmodus:</h2>
     <button onclick="selecteerModus('single')">Single player</button>
     <button onclick="selecteerModus('teams')">Teams</button>
   </div>
 
+</div>
+
+
   <div id="setup" style="display: none;">
-    <label for="aantalSpelers">Aantal spelers (max 6):</label>
-    <input type="number" id="aantalSpelers" min="1" max="6" value="2" class="compact-input">
+    <label for="aantalSpelers">Aantal spelers (max 10):</label>
+    <input type="number" id="aantalSpelers" min="1" max="10" value="2" class="compact-input">
     <label for="aantalLegs">Aantal legs te winnen:</label>
     <input type="number" id="aantalLegs" min="1" max="10" value="3" class="compact-input">
     <button onclick="setupNamen()">Volgende</button>

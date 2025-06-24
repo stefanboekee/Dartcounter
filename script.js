@@ -19,8 +19,9 @@ function speelStartGeluid() {
 function selecteerModus(mode) {
   document.getElementById("keuzeMode").style.display = 'none';
   const scoreKeuze = document.createElement("div");
+  scoreKeuze.className = "scoreselectie"; // voeg deze regel toe
   scoreKeuze.innerHTML = `
-    <h3>Kies beginput:</h3>
+    <h3>Kies startscore:</h3>
     <button onclick="selecteerStartScore('${mode}', 301)">301</button>
     <button onclick="selecteerStartScore('${mode}', 501)">501</button>
   `;
