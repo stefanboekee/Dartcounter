@@ -67,7 +67,7 @@ input[type="text"] {
 }
 
 input.compact-input {
-  width: 20% !important;
+  width: 100px;
   display: inline-block;
 }
 
