@@ -142,7 +142,7 @@ input.addEventListener('keydown', function(e) {
       });
     }
 
-if (spelers[beurt].score <= 170) {
+if (teams[beurt].score <= 170) {
   const intro = new Audio('your_score_is.mp3');
   const scoreAudio = new Audio(`${teams[beurt].score}.mp3`);
   intro.onended = () => scoreAudio.play().catch(() => {});
