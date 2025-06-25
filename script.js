@@ -11,6 +11,13 @@ let startScore = 501;
 let herstelGeschiedenis = []; // stapel voor meerdere herstelslagen
 const ongeldigeScores = [179, 178, 176, 175, 173, 172, 169, 166, 163];
 
+function toggleSpelControls(tonen) {
+  const display = tonen ? "block" : "none";
+  document.getElementById("statistieken").style.display = display;
+  document.getElementById("stopKnop").style.display = tonen ? "inline-block" : "none";
+  document.getElementById("herstelKnop").style.display = tonen ? "inline-block" : "none";
+}
+
 function speelStartGeluid() {
   const audio = new Audio('Gameon.mp3');
   audio.play().catch(() => {});
@@ -37,9 +44,10 @@ function selecteerStartScore(mode, score) {
     document.getElementById("setup").style.display = 'none';
     document.getElementById("teamSetup").innerHTML = `
       <label for="aantalTeams">Aantal teams:</label>
-      <input type="number" id="aantalTeams" min="2" max="4" value="2" class="compact-input">
+      <input type="number" id="aantalTeams" min="2" max="4" value="3" class="compact-input">
       <label for="aantalLegs">Aantal legs te winnen:</label>
-      <input type="number" id="aantalLegs" min="1" max="10" value="3" class="compact-input">
+      <input type="number" id="aantalLegs" min="1" max="10" value="2" class="compact-input">
+      </br>	
       <button onclick="setupTeams()">Volgende</button>
     `;
     document.getElementById("teamSetup").style.display = 'block';
@@ -56,9 +64,10 @@ function setupTeams() {
   for (let i = 0; i < aantal; i++) {
     container.innerHTML += `
       <label>Team ${i + 1} naam:</label>
-      <input type="text" id="teamNaam${i}" placeholder="Team ${i + 1}">
+      <input type="text" id="teamNaam${i}" placeholder="Team ${i + 1}" class="naamveld">
       <label>Spelers (komma-gescheiden):</label>
-      <input type="text" id="teamSpelers${i}" placeholder="bijv. Jan,Piet">
+      <input type="text" id="teamSpelers${i}" placeholder="bijv. Jan,Piet" class="naamveld">
+      </br>
     `;
   }
   container.innerHTML += `<button onclick="startTeamSpel(${aantal})">Start teamspel</button>`;
@@ -86,6 +95,8 @@ function startTeamSpel(aantal) {
 }
 
 function renderTeamSpel() {
+  toggleSpelControls(true);
+
   const container = document.getElementById("spel");
   container.innerHTML = '';
 
@@ -217,6 +228,8 @@ function startSpel(aantal) {
 }
 
 function renderSpel() {
+  toggleSpelControls(true);
+
   const container = document.getElementById("spel");
   container.innerHTML = '';
   spelers.forEach((speler, index) => {
@@ -385,6 +398,7 @@ function herstelLaatsteScore() {
 
 function stopSpel() {
   if (confirm("Weet je zeker dat je het spel wilt stoppen?")) {
+  toggleSpelControls(false);
     location.reload();
   }
 }

@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dartcounter V1.1</title>
+  <title>Dartcounter V1.2</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="logo-container">
   <img src="logo.png" alt="Dartcounter Logo" class="logo">
 </div>
-  <h1>Dartcounter V1.1</h1>
+  <h1>Dartcounter V1.2</h1>
   <div id="keuzeMode" style="margin-top: 20px; text-align: center;">
     <h2>Kies spelmodus:</h2>
     <button onclick="selecteerModus('single')">Single player</button>
@@ -18,7 +18,6 @@
   </div>
 
 </div>
-
 
   <div id="setup" style="display: none; text-align: center;">
     <label for="aantalSpelers">Aantal spelers (max 10):</label>
@@ -29,18 +28,18 @@
     <button onclick="setupNamen()">Volgende</button>
   </div>
 
-  <div id="teamSetup" style="display: none;"></div>
+  <div id="teamSetup" style="display: none; text-align: center;"></div>
   <div id="namenSetup"></div>
   <div id="spel" class="flex-container"></div>
 
-  <div class="statistieken" id="statistieken">
+  <div id="statistieken" class="statistieken" style="display: none;">
     <h2>Statistieken sessie</h2>
     <ul id="statistiekenLijst"></ul>
   </div>
 
   <div id="controls" style="margin-top: 20px; text-align: center;">
-    <button onclick="stopSpel()">Stop spel</button>
-    <button onclick="herstelLaatsteScore()">Herstel laatste invoer</button>
+  <button id="stopKnop" onclick="stopSpel()" style="display: none;">Stop spel</button>
+  <button id="herstelKnop" onclick="herstelLaatsteScore()" style="display: none;">Herstel laatste invoer</button>
   </div>
 
   <script src="script.js"></script>

@@ -157,3 +157,9 @@ button:hover {
   display: block;
 }
 
+input.naamveld {
+  width: 300px;
+  display: inline-block;
+}
+
+
