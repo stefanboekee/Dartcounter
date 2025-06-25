@@ -140,6 +140,13 @@ function renderTeamSpel() {
   intro.onended = () => scoreAudio.play().catch(() => {});
   intro.play().catch(() => {});
     }
+
+ // Wacht voordat je het intro-geluid afspeelt
+  setTimeout(() => {
+    intro.play().catch(() => {});
+  }, 2500);
+}
+
   }, 0);
 
   updateStatistieken();
@@ -291,7 +298,14 @@ audio.onended = () => {
     intro.onended = () => scoreAudio.play().catch(() => {});
     intro.play().catch(() => {});
 }
-};
+
+ // Wacht voordat je het intro-geluid afspeelt
+  setTimeout(() => {
+    intro.play().catch(() => {});
+  }, 2500);
+}
+
+}; 0);
 
   const speler = spelers[index];
   const nieuweScore = speler.score - score;
