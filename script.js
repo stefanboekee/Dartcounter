@@ -134,13 +134,17 @@ function renderTeamSpel() {
         if (e.key === "Backspace") input.value = '';
       });
     }
- if (teams[beurt].score <= 170) {
+
+if (spelers[beurt].score <= 170) {
   const intro = new Audio('your_score_is.mp3');
   const scoreAudio = new Audio(`${teams[beurt].score}.mp3`);
   intro.onended = () => scoreAudio.play().catch(() => {});
-  intro.play().catch(() => {});
-    }
-
+  
+  // Wacht voordat je het intro-geluid afspeelt
+  setTimeout(() => {
+    intro.play().catch(() => {});
+  }, 2500);
+}
   }, 0);
 
   updateStatistieken();
@@ -268,6 +272,17 @@ function renderSpel() {
         if (e.key === "Backspace") input.value = '';
       });
     }
+
+if (spelers[beurt].score <= 170) {
+  const intro = new Audio('your_score_is.mp3');
+  const scoreAudio = new Audio(`${spelers[beurt].score}.mp3`);
+  intro.onended = () => scoreAudio.play().catch(() => {});
+  
+  // Wacht voordat je het intro-geluid afspeelt
+  setTimeout(() => {
+    intro.play().catch(() => {});
+  }, 2500);
+}
   }, 0);
 
   updateStatistieken();
@@ -285,16 +300,7 @@ function verwerkBeurt(index) {
 
 let audio = new Audio(`${score}.wav`);
 audio.play().catch(() => {});
-audio.onended = () => {
-  if (spelers[index].score <= 170) {
-    const intro = new Audio('your_score_is.mp3');
-    const scoreAudio = new Audio(`${spelers[index].score}.mp3`);
-    intro.onended = () => scoreAudio.play().catch(() => {});
-    intro.play().catch(() => {});
-}
 
-
-};
   const speler = spelers[index];
   const nieuweScore = speler.score - score;
   vorigeScore = { index, score };
