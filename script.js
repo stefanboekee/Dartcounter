@@ -122,6 +122,13 @@ function renderTeamSpel() {
     container.appendChild(div);
   });
 
+const input = document.getElementById('invoer');
+input.addEventListener('keydown', function(e) {
+  if (["e", "E", "+", "-"].includes(e.key)) {
+    e.preventDefault();
+  }
+});
+
   setTimeout(() => {
     const input = document.getElementById("invoer");
     if (input) {
@@ -131,7 +138,7 @@ function renderTeamSpel() {
           if (input.value.trim() === "") input.value = "0";
           verwerkTeamBeurt(beurt);
         }
-        if (e.key === "Backspace") input.value = '';
+        
       });
     }
 
@@ -259,6 +266,12 @@ function renderSpel() {
     `;
     container.appendChild(div);
   });
+const input = document.getElementById('invoer');
+input.addEventListener('keydown', function(e) {
+  if (["e", "E", "+", "-"].includes(e.key)) {
+    e.preventDefault();
+  }
+});
 
   setTimeout(() => {
     const input = document.getElementById("invoer");
@@ -269,7 +282,7 @@ function renderSpel() {
           if (input.value.trim() === "") input.value = "0";
           verwerkBeurt(beurt);
         }
-        if (e.key === "Backspace") input.value = '';
+        
       });
     }
 
