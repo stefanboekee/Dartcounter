@@ -203,7 +203,8 @@ function setupNamen() {
   for (let i = 0; i < aantal; i++) {
     container.innerHTML += `
       <label>Speler ${i + 1} naam:</label>
-      <input type="text" id="spelerNaam${i}" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('bevestigNamen').click();}">
+      <input type="text" id="spelerNaam${i}" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('bevestigNamen').click();}" class="naamveld">
+      </br>
     `;
   }
   container.innerHTML += `<button id="bevestigNamen" onclick="startSpel(${aantal})">Start spel</button>`;
