@@ -285,8 +285,8 @@ let audio = new Audio(`${score}.wav`);
 audio.play().catch(() => {});
 audio.onended = () => {
   if (spelers[index].score <= 170) {
-    const intro = new Audio('sounds/your_score_is.mp3');
-    const scoreAudio = new Audio(`sounds/${spelers[index].score}.mp3`);
+    const intro = new Audio('your_score_is.mp3');
+    const scoreAudio = new Audio(`${spelers[index].score}.mp3`);
     intro.onended = () => scoreAudio.play().catch(() => {});
     intro.play().catch(() => {});
 }
