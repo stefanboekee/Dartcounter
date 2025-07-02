@@ -8,6 +8,7 @@ let startVolgordeIndex = 0;
 let vorigeScore = null;
 let teamBeurtIndex = 0;
 let startScore = 501;
+let eersteLeg = true;
 let herstelGeschiedenis = []; // stapel voor meerdere herstelslagen
 const ongeldigeScores = [179, 178, 176, 175, 173, 172, 169, 166, 163];
 
@@ -16,11 +17,6 @@ function toggleSpelControls(tonen) {
   document.getElementById("statistieken").style.display = display;
   document.getElementById("stopKnop").style.display = tonen ? "inline-block" : "none";
   document.getElementById("herstelKnop").style.display = tonen ? "inline-block" : "none";
-}
-
-function speelStartGeluid() {
-  const audio = new Audio('Gameon.mp3');
-  audio.play().catch(() => {});
 }
 
 function selecteerModus(mode) {
@@ -90,8 +86,9 @@ function startTeamSpel(aantal) {
       legsGewonnen: 0,
     });
   }
+
   document.getElementById("teamSetup").style.display = 'none';
-  renderTeamSpel();
+    renderTeamSpel();
 }
 
 function renderTeamSpel() {
@@ -129,30 +126,35 @@ input.addEventListener('keydown', function(e) {
   }
 });
 
-  setTimeout(() => {
-    const input = document.getElementById("invoer");
-    if (input) {
-      input.focus();
-      input.addEventListener("keydown", function(e) {
-        if (e.key === "Enter") {
-          if (input.value.trim() === "") input.value = "0";
-          verwerkTeamBeurt(beurt);
-        }
-        
-      });
-    }
+setTimeout(() => {
+  const input = document.getElementById("invoer");
+  if (input) {
+    input.focus();
+    input.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        if (input.value.trim() === "") input.value = "0";
+        verwerkTeamBeurt(beurt);
+      }
+    });
+  }
 
-if (teams[beurt].score <= 170) {
-  const intro = new Audio('your_score_is.mp3');
-  const scoreAudio = new Audio(`${teams[beurt].score}.mp3`);
-  intro.onended = () => scoreAudio.play().catch(() => {});
-  
-  // Wacht voordat je het intro-geluid afspeelt
-  setTimeout(() => {
-    intro.play().catch(() => {});
-  }, 2500);
-}
-  }, 0);
+  if (eersteLeg) {
+    eersteLeg = false;
+    const overlay = document.getElementById("startLogoOverlay");
+    overlay.classList.add("visible");
+    const audio = new Audio('gameon.mp3');
+    audio.play().catch(() => {});
+    audio.onended = () => overlay.classList.remove("visible");
+  }
+
+  if (teams[beurt].score <= 170) {
+    const intro = new Audio('your_score_is.mp3');
+    const scoreAudio = new Audio(`${teams[beurt].score}.mp3`);
+    intro.onended = () => scoreAudio.play().catch(() => {});
+    setTimeout(() => intro.play().catch(() => {}), 2500);
+  }
+}, 0);
+
 
   updateStatistieken();
 }
@@ -191,10 +193,9 @@ function verwerkTeamBeurt(tIndex) {
       stopSpel();
       return;
     }
-    teams.forEach(t => {t.score = startScore; t.pijlengegooid = 0});
+    teams.forEach(t => {t.score = startScore; t.pijlenGegooid = 0});
     teamBeurtIndex++;
     beurt = startVolgordeIndex = (startVolgordeIndex + 1) % teams.length;
-    speelStartGeluid();
   } else if (nieuweScore < 0 || nieuweScore === 1) {
     alert("Bust!");
   } else {
@@ -226,6 +227,7 @@ function startSpel(aantal) {
   spelers = [];
   beurt = 0;
   sessieGeschiedenis = [];
+
   for (let i = 0; i < aantal; i++) {
     const naam = document.getElementById(`spelerNaam${i}`).value || `Speler ${i + 1}`;
     spelers.push({
@@ -235,10 +237,12 @@ function startSpel(aantal) {
       legsGewonnen: 0
     });
   }
+
   document.getElementById("setup").style.display = 'none';
   document.getElementById("namenSetup").style.display = 'none';
-  renderSpel();
+    renderSpel();
 }
+
 
 function renderSpel() {
   toggleSpelControls(true);
@@ -273,30 +277,35 @@ input.addEventListener('keydown', function(e) {
   }
 });
 
-  setTimeout(() => {
-    const input = document.getElementById("invoer");
-    if (input) {
-      input.focus();
-      input.addEventListener("keydown", function(e) {
-        if (e.key === "Enter") {
-          if (input.value.trim() === "") input.value = "0";
-          verwerkBeurt(beurt);
-        }
-        
-      });
-    }
+setTimeout(() => {
+  const input = document.getElementById("invoer");
+  if (input) {
+    input.focus();
+    input.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        if (input.value.trim() === "") input.value = "0";
+        verwerkBeurt(beurt);
+      }
+    });
+  }
 
-if (spelers[beurt].score <= 170) {
-  const intro = new Audio('your_score_is.mp3');
-  const scoreAudio = new Audio(`${spelers[beurt].score}.mp3`);
-  intro.onended = () => scoreAudio.play().catch(() => {});
-  
-  // Wacht voordat je het intro-geluid afspeelt
-  setTimeout(() => {
-    intro.play().catch(() => {});
-  }, 2500);
-}
-  }, 0);
+  if (eersteLeg) {
+    eersteLeg = false;
+    const overlay = document.getElementById("startLogoOverlay");
+    overlay.classList.add("visible");
+    const audio = new Audio('gameon.mp3');
+    audio.play().catch(() => {});
+    audio.onended = () => overlay.classList.remove("visible");
+  }
+
+  if (spelers[beurt].score <= 170) {
+    const intro = new Audio('your_score_is.mp3');
+    const scoreAudio = new Audio(`${spelers[beurt].score}.mp3`);
+    intro.onended = () => scoreAudio.play().catch(() => {});
+    setTimeout(() => intro.play().catch(() => {}), 2500);
+  }
+}, 0);
+
 
   updateStatistieken();
 }
@@ -338,7 +347,6 @@ audio.play().catch(() => {});
     }
     spelers.forEach(s => { s.score = startScore; s.geschiedenis = []; s.pijlenGegooid = 0;});
     beurt = startVolgordeIndex = (startVolgordeIndex + 1) % spelers.length;
-    speelStartGeluid();
   } else if (nieuweScore < 0 || nieuweScore === 1) {
     alert("Bust!");
   } else {
@@ -372,7 +380,7 @@ function getCheckoutHint(score) {
     114: "T20, 14, D20", 113: "T20, 13, D20", 112: "T20, 12, D20", 111: "T20, 11, D20",
     110: "T20, 10, D20", 109: "T20, 9, D20", 108: "T20, 8, D20", 107: "T19, 10, D20",
     106: "T20, 6, D20", 105: "T20, 5, D20", 104: "T18, 18, D16", 103: "T20, 3, D20",
-    102: "T20, 10, D16", 101: "T17, 10, D20", 100: "T20, D20", 100: "T20, D20", 99: "T19, 10, D16", 98: "T20, D19", 97: "T19, D20", 96: "T20, D18", 95: "T19, D19", 
+    102: "T20, 10, D16", 101: "T17, 10, D20", 100: "T20, D20", 99: "T19, 10, D16", 98: "T20, D19", 97: "T19, D20", 96: "T20, D18", 95: "T19, D19", 
     94: "T18, D20", 93: "T19, D18", 92: "T20, D16", 91: "T17, D20", 90: "T18, D18", 89: "T19, D16",
     88: "T16, D20", 87: "T17, D18", 86: "T18, D16", 85: "T15, D20", 84: "T20, D12", 83: "T17, D16",
     82: "Bull, D16", 81: "T15, D18", 80: "T20, D10", 79: "T13, D20", 78: "T18, D12", 77: "T19, D10",
@@ -421,6 +429,7 @@ function herstelLaatsteScore() {
 function stopSpel() {
   if (confirm("Weet je zeker dat je het spel wilt stoppen?")) {
   toggleSpelControls(false);
+    eersteLeg = true;
     location.reload();
   }
 }

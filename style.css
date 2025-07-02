@@ -162,4 +162,42 @@ input.naamveld {
   display: inline-block;
 }
 
+#startLogoOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1s ease-in-out;
+}
+
+#startLogoOverlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#startLogo {
+  width: 100px;
+  animation: growFullScreen 3s ease-in-out forwards;
+}
+
+@keyframes growFullScreen {
+  0% {
+    width: 100px;
+    opacity: 1;
+  }
+  100% {
+    width: 1000px;
+    opacity: 1;
+  }
+}
+
+
+
 
