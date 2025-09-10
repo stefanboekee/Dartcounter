@@ -189,8 +189,7 @@ function verwerkTeamBeurt(tIndex) {
       team.besteLeg = team.pijlenGegooid;
     }
     if (team.legsGewonnen >= legsTeWinnen) {
-      alert(`${team.naam} wint de sessie!`);
-      stopSpel();
+      toonEindscherm(team, teams);
       return;
     }
     teams.forEach(t => {t.score = startScore; t.pijlenGegooid = 0});
@@ -341,8 +340,7 @@ audio.play().catch(() => {});
     }
 
     if (speler.legsGewonnen >= legsTeWinnen) {
-      alert(`${speler.naam} wint de sessie!`);
-      stopSpel();
+      toonEindscherm(speler, spelers);
       return;
     }
     spelers.forEach(s => { s.score = startScore; s.geschiedenis = []; s.pijlenGegooid = 0;});
@@ -422,6 +420,82 @@ function herstelLaatsteScore() {
     if (s.geschiedenis.length) s.geschiedenis.pop();
     beurt = laatste.index;
     sessieGeschiedenis.push(`Herstel: ${s.naam} is weer aan de beurt.`);
+    renderSpel();
+  }
+}
+
+function toonEindscherm(winnaar, deelnemers) {
+  toggleSpelControls(false);
+  document.getElementById("spel").style.display = "none";
+  document.getElementById("statistieken").style.display = "none";
+
+  const container = document.getElementById("eindscherm");
+  container.style.display = "block";
+
+  // Sorteer deelnemers behalve winnaar op resterende score oplopend (minste punten eerst)
+  const overige = [...deelnemers]
+    .filter(s => s.naam !== winnaar.naam)
+    .sort((a, b) => a.score - b.score);
+
+  // Zet winnaar links, gevolgd door rest
+  const ranglijst = [winnaar, ...overige];
+
+  let html = `
+    <h1>🏆 Winnaar: <span style="font-size: 3rem; color: gold;">${winnaar.naam}</span></h1>
+    <h2>Ranglijst</h2>
+    <div class="flex-container">
+  `;
+
+  ranglijst.forEach((speler, idx) => {
+    const avg = speler.geschiedenis ? (gemiddelde(speler.geschiedenis).toFixed(1)) : 0;
+    const isWinnaar = speler.naam === winnaar.naam;
+
+    // podium-classes voor #1–#3
+    let podiumClass = "";
+    if (idx === 0) podiumClass = "podium-goud";
+    else if (idx === 1) podiumClass = "podium-zilver";
+    else if (idx === 2) podiumClass = "podium-brons";
+
+    html += `
+      <div class="speler ${isWinnaar ? "winnaar-highlight" : ""} ${podiumClass}">
+        <h2>#${idx + 1} ${idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : ""}</h2>
+        <h3>${speler.naam}</h3>
+        <div class="grote-score">${speler.score}</div>
+        <p>Legs gewonnen: ${speler.legsGewonnen}/${legsTeWinnen}</p>
+        ${avg ? `<p>Gemiddelde score: ${avg}</p>` : ""}
+        <p>Pijlen gegooid: ${speler.pijlenGegooid || 0}</p>
+        <p>Beste leg: ${speler.besteLeg || '-'}</p>
+      </div>
+    `;
+  });
+
+  html += `</div><button onclick="opnieuwSpelen()">Opnieuw spelen</button>`;
+  container.innerHTML = html;
+}
+
+
+function opnieuwSpelen() {
+  document.getElementById("eindscherm").style.display = "none";
+  document.getElementById("spel").style.display = "flex";
+
+  if (teamMode) {
+    teams.forEach(t => {
+      t.score = startScore;
+      t.pijlenGegooid = 0;
+      t.besteLeg = null;
+      t.legsGewonnen = 0;
+    });
+    beurt = startVolgordeIndex = (startVolgordeIndex + 1) % teams.length;
+    renderTeamSpel();
+  } else {
+    spelers.forEach(s => {
+      s.score = startScore;
+      s.geschiedenis = [];
+      s.pijlenGegooid = 0;
+      s.besteLeg = null;
+      s.legsGewonnen = 0;
+    });
+    beurt = startVolgordeIndex = (startVolgordeIndex + 1) % spelers.length;
     renderSpel();
   }
 }
