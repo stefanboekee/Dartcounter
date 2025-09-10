@@ -460,7 +460,6 @@ function toonEindscherm(winnaar, deelnemers) {
       <div class="speler ${isWinnaar ? "winnaar-highlight" : ""} ${podiumClass}">
         <h2>#${idx + 1} ${idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : ""}</h2>
         <h3>${speler.naam}</h3>
-        <div class="grote-score">${speler.score}</div>
         <p>Legs gewonnen: ${speler.legsGewonnen}/${legsTeWinnen}</p>
         ${avg ? `<p>Gemiddelde score: ${avg}</p>` : ""}
         <p>Pijlen gegooid: ${speler.pijlenGegooid || 0}</p>
@@ -507,3 +506,4 @@ function stopSpel() {
     location.reload();
   }
 }
+
