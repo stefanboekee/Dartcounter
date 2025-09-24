@@ -84,6 +84,8 @@ function startTeamSpel(aantal) {
       score: startScore,
       spelers: teamSpelers,
       legsGewonnen: 0,
+	  geschiedenis: [],        // scores huidige leg
+	  totaalGeschiedenis: []   // alle scores van alle legs
     });
   }
 
@@ -107,8 +109,11 @@ function renderTeamSpel() {
       <h2>${spelerNaam} (${team.naam})</h2>
       <div class="grote-score">${team.score}</div>
       <p>Legs gewonnen: ${team.legsGewonnen}/${legsTeWinnen}</p>
+      <p>Gemiddelde (huidige leg): ${team.geschiedenis.length ? gemiddelde(team.geschiedenis).toFixed(1) : 0}</p>
+      <p>Gemiddelde totaal: ${team.totaalGeschiedenis.length ? gemiddelde(team.totaalGeschiedenis).toFixed(1) : 0}</p>
       <p>Pijlen gegooid: ${team.pijlenGegooid || 0}</p>
       <p>Beste leg: ${team.besteLeg || '-'}</p>
+
       <p>Checkout hint: <strong>${getCheckoutHint(team.score)}</strong></p>
       ${isBeurt ? `
         <label for="invoer">Score invoeren:</label>
@@ -180,6 +185,10 @@ function verwerkTeamBeurt(tIndex) {
 
   if (!team.pijlenGegooid) team.pijlenGegooid = 0;
   team.pijlenGegooid += 3;
+  // sla score op voor gemiddelden
+  team.geschiedenis.push(score);
+  team.totaalGeschiedenis.push(score);
+
 
   if (nieuweScore === 0) {
     team.legsGewonnen++;
@@ -192,7 +201,12 @@ function verwerkTeamBeurt(tIndex) {
       toonEindscherm(team, teams);
       return;
     }
-    teams.forEach(t => {t.score = startScore; t.pijlenGegooid = 0});
+    teams.forEach(t => {
+    t.score = startScore;
+    t.pijlenGegooid = 0;
+    t.geschiedenis = []; // reset huidige leg
+});
+
     teamBeurtIndex++;
     beurt = startVolgordeIndex = (startVolgordeIndex + 1) % teams.length;
   } else if (nieuweScore < 0 || nieuweScore === 1) {
@@ -232,7 +246,8 @@ function startSpel(aantal) {
     spelers.push({
       naam,
       score: startScore,
-      geschiedenis: [],
+      geschiedenis: [],        // scores huidige leg
+      totaalGeschiedenis: [],  // alle scores van alle legs
       legsGewonnen: 0
     });
   }
@@ -256,7 +271,8 @@ function renderSpel() {
       <h2>${speler.naam}</h2>
       <div class="grote-score">${speler.score}</div>
       <p>Legs gewonnen: ${speler.legsGewonnen}/${legsTeWinnen}</p>
-      <p>Gemiddelde score: ${avg}</p>
+      <p>Gemiddelde (huidige leg): ${speler.geschiedenis.length ? gemiddelde(speler.geschiedenis).toFixed(1) : 0}</p>
+      <p>Gemiddelde totaal: ${speler.totaalGeschiedenis.length ? gemiddelde(speler.totaalGeschiedenis).toFixed(1) : 0}</p>
       <p>Pijlen gegooid: ${speler.pijlenGegooid || 0}</p>
       <p>Beste leg: ${speler.besteLeg || '-'}</p>
       <p>Checkout hint: <strong>${getCheckoutHint(speler.score)}</strong></p>
@@ -343,13 +359,19 @@ audio.play().catch(() => {});
       toonEindscherm(speler, spelers);
       return;
     }
-    spelers.forEach(s => { s.score = startScore; s.geschiedenis = []; s.pijlenGegooid = 0;});
+    spelers.forEach(s => {
+    s.score = startScore;
+    s.geschiedenis = []; // reset huidige leg
+    s.pijlenGegooid = 0;
+});
+
     beurt = startVolgordeIndex = (startVolgordeIndex + 1) % spelers.length;
   } else if (nieuweScore < 0 || nieuweScore === 1) {
     alert("Bust!");
   } else {
     speler.score = nieuweScore;
     speler.geschiedenis.push(score);
+	speler.totaalGeschiedenis.push(score);
     beurt = (beurt + 1) % spelers.length;
   }
 
@@ -460,6 +482,7 @@ function toonEindscherm(winnaar, deelnemers) {
       <div class="speler ${isWinnaar ? "winnaar-highlight" : ""} ${podiumClass}">
         <h2>#${idx + 1} ${idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : ""}</h2>
         <h3>${speler.naam}</h3>
+        <div class="grote-score">${speler.score}</div>
         <p>Legs gewonnen: ${speler.legsGewonnen}/${legsTeWinnen}</p>
         ${avg ? `<p>Gemiddelde score: ${avg}</p>` : ""}
         <p>Pijlen gegooid: ${speler.pijlenGegooid || 0}</p>
@@ -506,4 +529,3 @@ function stopSpel() {
     location.reload();
   }
 }
-
