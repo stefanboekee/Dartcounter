@@ -239,3 +239,53 @@ input.naamveld {
   border: 3px solid #cd7f32;
   background: linear-gradient(to bottom, #fff5ee, #cd7f32);
 }
+#addPlayerSmallBtn {
+  background-color: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.1s;
+  margin-bottom: 10px;
+  display: inline-block;
+}
+
+#addPlayerSmallBtn:hover {
+  background-color: #218838;
+  transform: scale(1.05);
+}
+
+#addPlayerSmallBtn:active {
+  transform: scale(0.95);
+}
+
+#controls {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 20px; /* ruimte tussen knoppen */
+  margin-top: 20px;
+}
+.finish-input {
+  width: 70px;
+  padding: 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.naamveld-select, .naamveld-input {
+  width: 220px;
+  margin: 3px 0 10px 0;
+  display: inline-block;
+  vertical-align: middle;
+}
+.naamveld-input {
+  display: none;
+}
+
+

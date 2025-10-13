@@ -14,7 +14,6 @@ const ongeldigeScores = [179, 178, 176, 175, 173, 172, 169, 166, 163];
 
 function toggleSpelControls(tonen) {
   const display = tonen ? "block" : "none";
-  document.getElementById("statistieken").style.display = display;
   document.getElementById("stopKnop").style.display = tonen ? "inline-block" : "none";
   document.getElementById("herstelKnop").style.display = tonen ? "inline-block" : "none";
 }
@@ -43,7 +42,7 @@ function selecteerStartScore(mode, score) {
       <input type="number" id="aantalTeams" min="2" max="4" value="3" class="compact-input">
       <label for="aantalLegs">Aantal legs te winnen:</label>
       <input type="number" id="aantalLegs" min="1" max="10" value="2" class="compact-input">
-      </br>	
+      </br>    
       <button onclick="setupTeams()">Volgende</button>
     `;
     document.getElementById("teamSetup").style.display = 'block';
@@ -84,8 +83,8 @@ function startTeamSpel(aantal) {
       score: startScore,
       spelers: teamSpelers,
       legsGewonnen: 0,
-	  geschiedenis: [],        // scores huidige leg
-	  totaalGeschiedenis: []   // alle scores van alle legs
+      geschiedenis: [],        // scores huidige leg
+      totaalGeschiedenis: []   // alle scores van alle legs
     });
   }
 
@@ -109,7 +108,7 @@ function renderTeamSpel() {
       <h2>${spelerNaam} (${team.naam})</h2>
       <div class="grote-score">${team.score}</div>
       <p>Legs gewonnen: ${team.legsGewonnen}/${legsTeWinnen}</p>
-      <p>Gemiddelde (huidige leg): ${team.geschiedenis.length ? gemiddelde(team.geschiedenis).toFixed(1) : 0}</p>
+      <p>Gemiddelde: ${team.geschiedenis.length ? gemiddelde(team.geschiedenis).toFixed(1) : 0}</p>
       <p>Gemiddelde totaal: ${team.totaalGeschiedenis.length ? gemiddelde(team.totaalGeschiedenis).toFixed(1) : 0}</p>
       <p>Pijlen gegooid: ${team.pijlenGegooid || 0}</p>
       <p>Beste leg: ${team.besteLeg || '-'}</p>
@@ -124,44 +123,44 @@ function renderTeamSpel() {
     container.appendChild(div);
   });
 
-const input = document.getElementById('invoer');
-input.addEventListener('keydown', function(e) {
-  if (["e", "E", "+", "-"].includes(e.key)) {
-    e.preventDefault();
-  }
-});
-
-setTimeout(() => {
-  const input = document.getElementById("invoer");
+  const input = document.getElementById('invoer');
   if (input) {
-    input.focus();
-    input.addEventListener("keydown", function(e) {
-      if (e.key === "Enter") {
-        if (input.value.trim() === "") input.value = "0";
-        verwerkTeamBeurt(beurt);
+    input.addEventListener('keydown', function(e) {
+      if (["e", "E", "+", "-"].includes(e.key)) {
+        e.preventDefault();
       }
     });
   }
 
-  if (eersteLeg) {
-    eersteLeg = false;
-    const overlay = document.getElementById("startLogoOverlay");
-    overlay.classList.add("visible");
-    const audio = new Audio('gameon.mp3');
-    audio.play().catch(() => {});
-    audio.onended = () => overlay.classList.remove("visible");
-  }
+  setTimeout(() => {
+    const input = document.getElementById("invoer");
+    if (input) {
+      input.focus();
+      input.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+          if (input.value.trim() === "") input.value = "0";
+          verwerkTeamBeurt(beurt);
+        }
+      });
+    }
 
-  if (teams[beurt].score <= 170) {
-    const intro = new Audio('your_score_is.mp3');
-    const scoreAudio = new Audio(`${teams[beurt].score}.mp3`);
-    intro.onended = () => scoreAudio.play().catch(() => {});
-    setTimeout(() => intro.play().catch(() => {}), 2500);
-  }
-}, 0);
+    if (eersteLeg) {
+      eersteLeg = false;
+      const overlay = document.getElementById("startLogoOverlay");
+      overlay.classList.add("visible");
+      const audio = new Audio('gameon.mp3');
+      audio.play().catch(() => {});
+      audio.onended = () => overlay.classList.remove("visible");
+    }
 
+    if (teams[beurt].score <= 170) {
+      const intro = new Audio('your_score_is.mp3');
+      const scoreAudio = new Audio(`${teams[beurt].score}.mp3`);
+      intro.onended = () => scoreAudio.play().catch(() => {});
+      setTimeout(() => intro.play().catch(() => {}), 2500);
+    }
+  }, 0);
 
-  updateStatistieken();
 }
 
 function verwerkTeamBeurt(tIndex) {
@@ -190,17 +189,23 @@ function verwerkTeamBeurt(tIndex) {
   team.totaalGeschiedenis.push(score);
 
 
-  if (nieuweScore === 0) {
-    team.legsGewonnen++;
-    sessieGeschiedenis.push(`${team.naam} wint een leg!`);
+if (nieuweScore === 0) {
+  team.legsGewonnen++;
+  sessieGeschiedenis.push(`${team.naam} wint een leg!`);
 
-    if (!team.besteLeg || team.pijlenGegooid < team.besteLeg) {
-      team.besteLeg = team.pijlenGegooid;
-    }
-    if (team.legsGewonnen >= legsTeWinnen) {
-      toonEindscherm(team, teams);
-      return;
-    }
+  // geluid leg gewonnen
+  new Audio('leg_win.mp3').play().catch(() => {});
+
+  if (!team.besteLeg || team.pijlenGegooid < team.besteLeg) {
+    team.besteLeg = team.pijlenGegooid;
+  }
+  if (team.legsGewonnen >= legsTeWinnen) {
+    // geluid sessie gewonnen
+    new Audio('game_win.mp3').play().catch(() => {});
+    toonEindscherm(team, teams);
+    return;
+  }
+
     teams.forEach(t => {
     t.score = startScore;
     t.pijlenGegooid = 0;
@@ -224,39 +229,129 @@ function verwerkTeamBeurt(tIndex) {
 function setupNamen() {
   const aantal = parseInt(document.getElementById("aantalSpelers").value);
   legsTeWinnen = parseInt(document.getElementById("aantalLegs").value);
+
   const container = document.getElementById("namenSetup");
-  container.innerHTML = `<h2>Voer spelersnamen in:</h2>`;
+  container.innerHTML = "<h2>Voer spelersnamen in</h2>";
+
+  const namenOpties = [
+    "Gerbrand",
+    "Guido",
+    "Harm",
+    "Sander",
+    "Thomas",
+    "Ron",
+    "Stefan",
+    "Kylian",
+    "Joshua",
+    "Anders"
+  ];
+
   for (let i = 0; i < aantal; i++) {
     container.innerHTML += `
       <label>Speler ${i + 1} naam:</label>
-      <input type="text" id="spelerNaam${i}" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('bevestigNamen').click();}" class="naamveld">
-      </br>
+      <select id="spelerSelect${i}" class="naamveld-select" onchange="toggleInput(${i})">
+        ${namenOpties.map(naam => `<option value="${naam}">${naam}</option>`).join("")}
+      </select>
+      <input type="text" id="spelerInput${i}" class="naamveld-input" placeholder="Vul naam in..."><br>
     `;
   }
-  container.innerHTML += `<button id="bevestigNamen" onclick="startSpel(${aantal})">Start spel</button>`;
+
+  container.innerHTML += `
+    <button id="bevestigNamen" onclick="startSpel(${aantal})">Start spel</button>
+  `;
 }
 
+// Laat inputveld zien/verbergen
+function toggleInput(index) {
+  const select = document.getElementById(`spelerSelect${index}`);
+  const input = document.getElementById(`spelerInput${index}`);
+  if (select.value === "Anders") {
+    input.style.display = "inline-block";
+  } else {
+    input.style.display = "none";
+    input.value = ""; // leegmaken als weggeklikt
+  }
+}
+
+// Pas startSpel aan, zodat de juiste naam wordt gekozen
 function startSpel(aantal) {
   spelers = [];
   beurt = 0;
   sessieGeschiedenis = [];
 
   for (let i = 0; i < aantal; i++) {
-    const naam = document.getElementById(`spelerNaam${i}`).value || `Speler ${i + 1}`;
+    const select = document.getElementById(`spelerSelect${i}`);
+    const input = document.getElementById(`spelerInput${i}`);
+    const naam = select.value === "Anders" ? input.value.trim() : select.value;
+
+    if (!naam) {
+      alert(`Vul een naam in bij speler ${i+1}`);
+      return;
+    }
+
     spelers.push({
       naam,
       score: startScore,
-      geschiedenis: [],        // scores huidige leg
-      totaalGeschiedenis: [],  // alle scores van alle legs
-      legsGewonnen: 0
+      geschiedenis: [],
+      scores: [], // huidige leg
+      totaalGeschiedenis: [], // alle scores van alle legs
+      legsGewonnen: 0,
+      pijlenGegooid: 0,
+      besteLeg: null
     });
   }
 
-  document.getElementById("setup").style.display = 'none';
-  document.getElementById("namenSetup").style.display = 'none';
-    renderSpel();
+  document.getElementById("setup").style.display = "none";
+  document.getElementById("namenSetup").style.display = "none";
+  renderSpel();
 }
 
+// ----- NIEUW: functie om een nieuwe speler toe te voegen en het spel volledig te herstarten -----
+function nieuweSpelerToevoegen() {
+  if (teamMode) return; // Alleen voor single mode
+  const naam = prompt("Voer de naam van de nieuwe speler in:");
+  if (!naam || !naam.trim()) return;
+
+  // Voeg nieuwe speler toe aan bestaande lijst
+  spelers.push({
+    naam: naam.trim(),
+    score: startScore,
+    geschiedenis: [],
+    totaalGeschiedenis: [],
+    legsGewonnen: 0,
+    pijlenGegooid: 0,
+    besteLeg: null
+  });
+
+  alert(`${naam.trim()} is toegevoegd. Het spel wordt opnieuw gestart.`);
+  herstartSpel();
+}
+
+function herstartSpel() {
+  // Reset match-variabelen en alle spelers naar startwaarden
+  eersteLeg = true;
+  sessieGeschiedenis = [];
+  herstelGeschiedenis = [];
+
+  spelers.forEach(s => {
+    s.score = startScore;
+    s.geschiedenis = [];
+    if (!Array.isArray(s.totaalGeschiedenis)) s.totaalGeschiedenis = [];
+    s.pijlenGegooid = 0;
+    s.besteLeg = null;
+    s.legsGewonnen = 0;
+  });
+
+  // Reset startvolgorde zodat het spel echt helemaal opnieuw begint
+  startVolgordeIndex = 0;
+  beurt = 0;
+
+  // Laat speelveld zien en update UI
+  document.getElementById("eindscherm").style.display = "none";
+  document.getElementById("spel").style.display = "flex";
+
+  renderSpel();
+}
 
 function renderSpel() {
   toggleSpelControls(true);
@@ -271,11 +366,12 @@ function renderSpel() {
       <h2>${speler.naam}</h2>
       <div class="grote-score">${speler.score}</div>
       <p>Legs gewonnen: ${speler.legsGewonnen}/${legsTeWinnen}</p>
-      <p>Gemiddelde (huidige leg): ${speler.geschiedenis.length ? gemiddelde(speler.geschiedenis).toFixed(1) : 0}</p>
+      <p>Gemiddelde: ${speler.geschiedenis.length ? gemiddelde(speler.geschiedenis).toFixed(1) : 0}</p>
       <p>Gemiddelde totaal: ${speler.totaalGeschiedenis.length ? gemiddelde(speler.totaalGeschiedenis).toFixed(1) : 0}</p>
       <p>Pijlen gegooid: ${speler.pijlenGegooid || 0}</p>
-      <p>Beste leg: ${speler.besteLeg || '-'}</p>
+	  <p>Beste leg: ${speler.besteLeg || '-'}</p>
       <p>Checkout hint: <strong>${getCheckoutHint(speler.score)}</strong></p>
+      <p>Beste leg: ${speler.besteLeg || '-'}</p>
       <p class="geschiedenis">Geschiedenis: ${speler.geschiedenis.join(", ")}</p>
       ${index === beurt ? `
         <label for="invoer">Score invoeren:</label>
@@ -285,44 +381,52 @@ function renderSpel() {
     `;
     container.appendChild(div);
   });
-const input = document.getElementById('invoer');
-input.addEventListener('keydown', function(e) {
-  if (["e", "E", "+", "-"].includes(e.key)) {
-    e.preventDefault();
-  }
-});
 
-setTimeout(() => {
-  const input = document.getElementById("invoer");
+ // Toon kleine "Nieuwe speler" knop (alleen in single mode)
+if (!teamMode) {
+  document.getElementById('addPlayerSmallBtn').style.display = 'inline-block';
+} else {
+  document.getElementById('addPlayerSmallBtn').style.display = 'none';
+}
+
+
+  const input = document.getElementById('invoer');
   if (input) {
-    input.focus();
-    input.addEventListener("keydown", function(e) {
-      if (e.key === "Enter") {
-        if (input.value.trim() === "") input.value = "0";
-        verwerkBeurt(beurt);
+    input.addEventListener('keydown', function(e) {
+      if (["e", "E", "+", "-"].includes(e.key)) {
+        e.preventDefault();
       }
     });
   }
 
-  if (eersteLeg) {
-    eersteLeg = false;
-    const overlay = document.getElementById("startLogoOverlay");
-    overlay.classList.add("visible");
-    const audio = new Audio('gameon.mp3');
-    audio.play().catch(() => {});
-    audio.onended = () => overlay.classList.remove("visible");
-  }
+  setTimeout(() => {
+    const input = document.getElementById("invoer");
+    if (input) {
+      input.focus();
+      input.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+          if (input.value.trim() === "") input.value = "0";
+          verwerkBeurt(beurt);
+        }
+      });
+    }
 
-  if (spelers[beurt].score <= 170) {
-    const intro = new Audio('your_score_is.mp3');
-    const scoreAudio = new Audio(`${spelers[beurt].score}.mp3`);
-    intro.onended = () => scoreAudio.play().catch(() => {});
-    setTimeout(() => intro.play().catch(() => {}), 2500);
-  }
-}, 0);
+    if (eersteLeg) {
+      eersteLeg = false;
+      const overlay = document.getElementById("startLogoOverlay");
+      overlay.classList.add("visible");
+      const audio = new Audio('gameon.mp3');
+      audio.play().catch(() => {});
+      audio.onended = () => overlay.classList.remove("visible");
+    }
 
-
-  updateStatistieken();
+    if (spelers[beurt] && spelers[beurt].score <= 170) {
+      const intro = new Audio('your_score_is.mp3');
+      const scoreAudio = new Audio(`${spelers[beurt].score}.mp3`);
+      intro.onended = () => scoreAudio.play().catch(() => {});
+      setTimeout(() => intro.play().catch(() => {}), 2500);
+    }
+  }, 0);
 }
 
 function verwerkBeurt(index) {
@@ -346,19 +450,26 @@ audio.play().catch(() => {});
   if (!speler.pijlenGegooid) speler.pijlenGegooid = 0;
   speler.pijlenGegooid += 3;
 
-  if (nieuweScore === 0) {
-    speler.legsGewonnen++;
-    sessieGeschiedenis.push(`${speler.naam} wint een leg!`);
+if (nieuweScore === 0) {
+  speler.legsGewonnen++;
+  sessieGeschiedenis.push(`${speler.naam} wint een leg!`);
+
+  // geluid leg gewonnen
+  new Audio('leg_win.mp3').play().catch(() => {});
+
+  if (!speler.besteLeg || speler.pijlenGegooid < speler.besteLeg) {
+    speler.besteLeg = speler.pijlenGegooid;
+  }
+
+if (speler.legsGewonnen >= legsTeWinnen) {
+  // geluid sessie gewonnen
+  const winSound = new Audio('victory.mp3');
+  winSound.play().catch(() => {});
+  toonEindscherm(speler, spelers);
+  return;
+}
 
 
-    if (!speler.besteLeg || speler.pijlenGegooid < speler.besteLeg) {
-      speler.besteLeg = speler.pijlenGegooid;
-    }
-
-    if (speler.legsGewonnen >= legsTeWinnen) {
-      toonEindscherm(speler, spelers);
-      return;
-    }
     spelers.forEach(s => {
     s.score = startScore;
     s.geschiedenis = []; // reset huidige leg
@@ -371,12 +482,17 @@ audio.play().catch(() => {});
   } else {
     speler.score = nieuweScore;
     speler.geschiedenis.push(score);
-	speler.totaalGeschiedenis.push(score);
+    speler.totaalGeschiedenis.push(score);
     beurt = (beurt + 1) % spelers.length;
   }
 
   input.value = '';
   renderSpel();
+}
+function updateHoogsteFinish(index, value) {
+  const finish = parseInt(value);
+  if (isNaN(finish) || finish < 2 || finish > 170) return;
+  spelers[index].hoogsteFinish = finish;
 }
 
 function gemiddelde(beurten) {
@@ -449,7 +565,6 @@ function herstelLaatsteScore() {
 function toonEindscherm(winnaar, deelnemers) {
   toggleSpelControls(false);
   document.getElementById("spel").style.display = "none";
-  document.getElementById("statistieken").style.display = "none";
 
   const container = document.getElementById("eindscherm");
   container.style.display = "block";
@@ -482,7 +597,6 @@ function toonEindscherm(winnaar, deelnemers) {
       <div class="speler ${isWinnaar ? "winnaar-highlight" : ""} ${podiumClass}">
         <h2>#${idx + 1} ${idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : ""}</h2>
         <h3>${speler.naam}</h3>
-        <div class="grote-score">${speler.score}</div>
         <p>Legs gewonnen: ${speler.legsGewonnen}/${legsTeWinnen}</p>
         ${avg ? `<p>Gemiddelde score: ${avg}</p>` : ""}
         <p>Pijlen gegooid: ${speler.pijlenGegooid || 0}</p>
@@ -492,6 +606,12 @@ function toonEindscherm(winnaar, deelnemers) {
   });
 
   html += `</div><button onclick="opnieuwSpelen()">Opnieuw spelen</button>`;
+
+  // Voeg hier knop toe om nieuwe speler toe te voegen (alleen single mode)
+  if (!teamMode) {
+    html += `<button style="background-color:#28a745; margin-left:10px;" onclick="nieuweSpelerToevoegen()">➕ Nieuwe speler toevoegen</button>`;
+  }
+
   container.innerHTML = html;
 }
 
@@ -529,3 +649,4 @@ function stopSpel() {
     location.reload();
   }
 }
+
