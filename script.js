@@ -1,25 +1,104 @@
+// -------------------------------
+// Dartcounter - script.js (opgeschoond)
+// Structuur:
+// 1) Config & globale variabelen
+// 2) UI helpers (tonen/verbergen, geluiden)
+// 3) Setup functies (single / teams)
+// 4) Spelverloop (beurt verwerken, teams, herstel, stoppen)
+// 5) Render functies (scherm bijwerken voor single en team)
+// 6) Helpers (gemiddelde, checkout hints, statistieken update)
+// Alle comments en namen zijn in het Nederlands.
+// -------------------------------
+
+/* ===========================
+   1) Config & globale variabelen
+   =========================== */
+
 let spelers = [];
 let teams = [];
 let teamMode = false;
-let beurt = 0;
+
+let beurt = 0;                  // index van huidige speler of team (in single mode index speler)
+let teamBeurtIndex = 0;         // extra teller voor wie binnen een team momenteel gooit
+let eersteLeg = true;
+let startScore = 501;
 let legsTeWinnen = 3;
-let sessieGeschiedenis = [];
+
+let sessieGeschiedenis = [];   // korte log voor UI (vb. 'Jan wint een leg!')
+let herstelGeschiedenis = [];   // stapel voor undo (meerdere levels)
+
 let startVolgordeIndex = 0;
 let vorigeScore = null;
-let teamBeurtIndex = 0;
-let startScore = 501;
-let eersteLeg = true;
-let herstelGeschiedenis = []; // stapel voor meerdere herstelslagen
-const ongeldigeScores = [179, 178, 176, 175, 173, 172, 169, 166, 163];
 
+let huidigeAudio = null; // globale referentie naar momenteel spelend audio-object
+let suppressNextScoreAnnouncement = false;
+
+const ongeldigeScores = [179, 178, 176, 175, 173, 172, 169, 166, 163]; // scores die niet mogelijk zijn
+
+
+/* ===========================
+   2) UI helpers (tonen / verbergen, geluid)
+   =========================== */
+
+/**
+ * Toon of verberg de belangrijkste bedieningsknoppen (stop / herstel).
+ * We gebruiken inline-block zodat de knoppen op 1 lijn blijven wanneer zichtbaar.
+ */
 function toggleSpelControls(tonen) {
-  const display = tonen ? "block" : "none";
-  document.getElementById("stopKnop").style.display = tonen ? "inline-block" : "none";
-  document.getElementById("herstelKnop").style.display = tonen ? "inline-block" : "none";
+  const display = tonen ? "inline-block" : "none";
+  const stopKnop = document.getElementById("stopKnop");
+  const herstelKnop = document.getElementById("herstelKnop");
+  if (stopKnop) stopKnop.style.display = display;
+  if (herstelKnop) herstelKnop.style.display = display;
 }
 
+/**
+ * Toon of verberg de kleine "Nieuwe speler" knop (onder waar de statistieken stonden).
+ */
+function toggleAddPlayerSmallBtn(tonen) {
+  const btn = document.getElementById("addPlayerSmallBtn");
+  if (!btn) return;
+  btn.style.display = tonen ? "inline-block" : "none";
+}
+
+/**
+ * Speel een geluid; stop eerst het huidige geluid (indien aanwezig).
+ * Retourneert het Audio-object (of null).
+ */
+function playSound(src) {
+  try {
+    // stop eventueel bestaand geluid
+    if (huidigeAudio) {
+      try { huidigeAudio.pause(); huidigeAudio.currentTime = 0; } catch (e) {}
+      huidigeAudio = null;
+    }
+
+    const audio = new Audio(src);
+    audio.play().catch(() => {});
+    huidigeAudio = audio;
+
+    // schoonmaken wanneer audio is afgelopen
+    audio.onended = () => {
+      if (huidigeAudio === audio) huidigeAudio = null;
+    };
+
+    return audio;
+  } catch (e) {
+    return null;
+  }
+}
+
+/* ===========================
+   3) Setup functies (single & team)
+   =========================== */
+
+/**
+ * Gebruiker kiest game modus single of teams.
+ * Toont de score-keuze (301 / 501) en configureert teamMode.
+ */
 function selecteerModus(mode) {
   document.getElementById("keuzeMode").style.display = 'none';
+
   const scoreKeuze = document.createElement("div");
   scoreKeuze.id = "scoreKeuze";
   scoreKeuze.className = "scoreselectie";
@@ -32,9 +111,13 @@ function selecteerModus(mode) {
   teamMode = (mode === 'teams');
 }
 
+/**
+ * Startscore gekozen — toon juiste setup (namen of teamsetup).
+ */
 function selecteerStartScore(mode, score) {
   startScore = score;
   document.getElementById("scoreKeuze")?.remove();
+
   if (mode === 'teams') {
     document.getElementById("setup").style.display = 'none';
     document.getElementById("teamSetup").innerHTML = `
@@ -51,6 +134,9 @@ function selecteerStartScore(mode, score) {
   }
 }
 
+/**
+ * Team setup (aantal teams gekozen) — bouw formulier voor teamnamen & spelers.
+ */
 function setupTeams() {
   const aantal = parseInt(document.getElementById("aantalTeams").value);
   legsTeWinnen = parseInt(document.getElementById("aantalLegs").value);
@@ -68,11 +154,15 @@ function setupTeams() {
   container.innerHTML += `<button onclick="startTeamSpel(${aantal})">Start teamspel</button>`;
 }
 
+/**
+ * Start een teamspel met de ingevulde teams en spelers.
+ */
 function startTeamSpel(aantal) {
   teams = [];
   beurt = 0;
   teamBeurtIndex = 0;
   sessieGeschiedenis = [];
+  herstelGeschiedenis = [];
 
   for (let i = 0; i < aantal; i++) {
     const teamNaam = document.getElementById(`teamNaam${i}`).value || `Team ${i + 1}`;
@@ -84,148 +174,20 @@ function startTeamSpel(aantal) {
       spelers: teamSpelers,
       legsGewonnen: 0,
       geschiedenis: [],        // scores huidige leg
-      totaalGeschiedenis: []   // alle scores van alle legs
+      totaalGeschiedenis: [],  // alle scores van alle legs
+      pijlenGegooid: 0,
+      besteLeg: null,
+      hoogsteFinish: null
     });
   }
 
   document.getElementById("teamSetup").style.display = 'none';
-    renderTeamSpel();
-}
-
-function renderTeamSpel() {
-  toggleSpelControls(true);
-
-  const container = document.getElementById("spel");
-  container.innerHTML = '';
-
-  teams.forEach((team, tIndex) => {
-    const spelerNaam = team.spelers[teamBeurtIndex % team.spelers.length];
-    const isBeurt = tIndex === beurt;
-
-    const div = document.createElement("div");
-    div.className = "speler" + (isBeurt ? " aan-de-beurt" : "");
-    div.innerHTML = `
-      <h2>${spelerNaam} (${team.naam})</h2>
-      <div class="grote-score">${team.score}</div>
-      <p>Legs gewonnen: ${team.legsGewonnen}/${legsTeWinnen}</p>
-      <p>Gemiddelde: ${team.geschiedenis.length ? gemiddelde(team.geschiedenis).toFixed(1) : 0}</p>
-      <p>Gemiddelde totaal: ${team.totaalGeschiedenis.length ? gemiddelde(team.totaalGeschiedenis).toFixed(1) : 0}</p>
-      <p>Pijlen gegooid: ${team.pijlenGegooid || 0}</p>
-      <p>Beste leg: ${team.besteLeg || '-'}</p>
-
-      <p>Checkout hint: <strong>${getCheckoutHint(team.score)}</strong></p>
-      ${isBeurt ? `
-        <label for="invoer">Score invoeren:</label>
-        <input id="invoer" type="number" min="0" max="180">
-        <button onclick="verwerkTeamBeurt(${tIndex})">Bevestig beurt</button>
-      ` : ''}
-    `;
-    container.appendChild(div);
-  });
-
-  const input = document.getElementById('invoer');
-  if (input) {
-    input.addEventListener('keydown', function(e) {
-      if (["e", "E", "+", "-"].includes(e.key)) {
-        e.preventDefault();
-      }
-    });
-  }
-
-  setTimeout(() => {
-    const input = document.getElementById("invoer");
-    if (input) {
-      input.focus();
-      input.addEventListener("keydown", function(e) {
-        if (e.key === "Enter") {
-          if (input.value.trim() === "") input.value = "0";
-          verwerkTeamBeurt(beurt);
-        }
-      });
-    }
-
-    if (eersteLeg) {
-      eersteLeg = false;
-      const overlay = document.getElementById("startLogoOverlay");
-      overlay.classList.add("visible");
-      const audio = new Audio('gameon.mp3');
-      audio.play().catch(() => {});
-      audio.onended = () => overlay.classList.remove("visible");
-    }
-
-    if (teams[beurt].score <= 170) {
-      const intro = new Audio('your_score_is.mp3');
-      const scoreAudio = new Audio(`${teams[beurt].score}.mp3`);
-      intro.onended = () => scoreAudio.play().catch(() => {});
-      setTimeout(() => intro.play().catch(() => {}), 2500);
-    }
-  }, 0);
-
-}
-
-function verwerkTeamBeurt(tIndex) {
-  const input = document.getElementById("invoer");
-  const score = parseInt(input.value);
-  if (isNaN(score) || score < 0 || score > 180 || ongeldigeScores.includes(score)) {
-    alert("Voer een geldige score in tussen 0 en 180.");
-    input.value = '';
-    input.focus();
-    return;
-  }
-  let audio = new Audio(`${score}.wav`);
-  audio.play().catch(() => {});
-
-  const team = teams[tIndex];
-  const spelerIndex = teamBeurtIndex % team.spelers.length;
-
-  herstelGeschiedenis.push({ team: tIndex, score, spelerIndex });
-
-  const nieuweScore = team.score - score;
-
-  if (!team.pijlenGegooid) team.pijlenGegooid = 0;
-  team.pijlenGegooid += 3;
-  // sla score op voor gemiddelden
-  team.geschiedenis.push(score);
-  team.totaalGeschiedenis.push(score);
-
-
-if (nieuweScore === 0) {
-  team.legsGewonnen++;
-  sessieGeschiedenis.push(`${team.naam} wint een leg!`);
-
-  // geluid leg gewonnen
-  new Audio('leg_win.mp3').play().catch(() => {});
-
-  if (!team.besteLeg || team.pijlenGegooid < team.besteLeg) {
-    team.besteLeg = team.pijlenGegooid;
-  }
-  if (team.legsGewonnen >= legsTeWinnen) {
-    // geluid sessie gewonnen
-    new Audio('game_win.mp3').play().catch(() => {});
-    toonEindscherm(team, teams);
-    return;
-  }
-
-    teams.forEach(t => {
-    t.score = startScore;
-    t.pijlenGegooid = 0;
-    t.geschiedenis = []; // reset huidige leg
-});
-
-    teamBeurtIndex++;
-    beurt = startVolgordeIndex = (startVolgordeIndex + 1) % teams.length;
-  } else if (nieuweScore < 0 || nieuweScore === 1) {
-    alert("Bust!");
-  } else {
-    team.score = nieuweScore;
-    beurt = (beurt + 1) % teams.length;
-    if (beurt === 0) teamBeurtIndex++;
-  }
-
-  input.value = '';
   renderTeamSpel();
 }
 
+/**
+ * Setup namen voor single mode (aantal spelers)
+ */
 function setupNamen() {
   const aantal = parseInt(document.getElementById("aantalSpelers").value);
   legsTeWinnen = parseInt(document.getElementById("aantalLegs").value);
@@ -261,19 +223,9 @@ function setupNamen() {
   `;
 }
 
-// Laat inputveld zien/verbergen
-function toggleInput(index) {
-  const select = document.getElementById(`spelerSelect${index}`);
-  const input = document.getElementById(`spelerInput${index}`);
-  if (select.value === "Anders") {
-    input.style.display = "inline-block";
-  } else {
-    input.style.display = "none";
-    input.value = ""; // leegmaken als weggeklikt
-  }
-}
-
-// Pas startSpel aan, zodat de juiste naam wordt gekozen
+/**
+ * Start een single-player match (meerdere spelers, niet teams).
+ */
 function startSpel(aantal) {
   spelers = [];
   beurt = 0;
@@ -305,14 +257,216 @@ function startSpel(aantal) {
   document.getElementById("namenSetup").style.display = "none";
   renderSpel();
 }
+/* ===========================
+   4) Spelverloop (beurten verwerken, herstel, stop, opnieuw)
+   =========================== */
 
-// ----- NIEUW: functie om een nieuwe speler toe te voegen en het spel volledig te herstarten -----
+/**
+ * Verwerk een beurt voor single mode.
+ * index = index van speler die de beurt bevestigt.
+ */
+function verwerkBeurt(index) {
+  const input = document.getElementById("invoer");
+  const score = parseInt(input?.value || "0", 10);
+
+  if (isNaN(score) || score < 0 || score > 180 || ongeldigeScores.includes(score)) {
+    alert("Voer een geldige score in tussen 0 en 180.");
+    if (input) { input.value = ''; input.focus(); }
+    return;
+  }
+  
+  const speler = spelers[index];
+  const nieuweScore = speler.score - score;
+
+  // push naar herstel-stapel
+  herstelGeschiedenis.push({ index, score });
+
+  // update pijlen gegooid (we tellen per beurt 3 pijlen)
+  if (!speler.pijlenGegooid) speler.pijlenGegooid = 0;
+  speler.pijlenGegooid += 3;
+
+  // wanneer leg gewonnen
+if (nieuweScore === 0) {
+  // --- belangrijk: de uitgooi-worp meetellen in de gemiddelden ---
+  speler.geschiedenis.push(score);
+  speler.totaalGeschiedenis.push(score);
+
+  speler.legsGewonnen++;
+  sessieGeschiedenis.push(`${speler.naam} wint een leg!`);
+
+  // speel leg-geluid
+  playSound('leg_win.mp3');
+
+  // Automatisch hoogste finish bepalen
+  const huidigeFinish = speler.score;
+  if (!speler.hoogsteFinish || huidigeFinish > speler.hoogsteFinish) {
+    speler.hoogsteFinish = huidigeFinish;
+  }
+
+    // beste leg (minimale pijlen)
+    if (!speler.besteLeg || speler.pijlenGegooid < speler.besteLeg) {
+      speler.besteLeg = speler.pijlenGegooid;
+    }
+
+    // reset scores voor volgende leg of toon eindscherm bij match-winst
+    if (speler.legsGewonnen >= legsTeWinnen) {
+      // spe(e)l gewonnen -> eindgeluid en eindscherm
+      playSound('victory.mp3');
+      toonEindscherm(speler, spelers);
+      return;
+    }
+
+    // reset voor alle spelers voor nieuwe leg
+    spelers.forEach(s => {
+      s.score = startScore;
+      s.geschiedenis = [];
+      s.pijlenGegooid = 0;
+    });
+
+    // update beurt/startvolgorde
+    beurt = startVolgordeIndex = (startVolgordeIndex + 1) % spelers.length;
+  } else if (nieuweScore < 0 || nieuweScore === 1) {
+    // bust
+    alert("Bust!");
+  } else {
+    // normale score, update speler
+    speler.score = nieuweScore;
+    speler.geschiedenis.push(score);
+    speler.totaalGeschiedenis.push(score);
+    beurt = (beurt + 1) % spelers.length;
+  }
+
+  // leeg input en render
+  if (input) input.value = '';
+// speel de score van de huidige speler
+const audio = playSound(`${score}.mp3`);
+
+// bepaal volgende speler index
+const volgende = beurt;
+
+// zodra het scoregeluid klaar is:
+if (audio) {
+  audio.onended = () => {
+    // check of volgende speler <= 170 heeft
+    const volgendeSpeler = spelers[volgende];
+    if (volgendeSpeler && volgendeSpeler.score <= 170) {
+      const intro = playSound('your_score_is.mp3');
+      if (intro) {
+        intro.onended = () => playSound(`${volgendeSpeler.score}.mp3`);
+      } else {
+        playSound(`${volgendeSpeler.score}.mp3`);
+      }
+    }
+  };
+}
+
+// daarna de UI bijwerken
+renderSpel();
+}
+
+/**
+ * Verwerk een beurt voor team mode.
+ * tIndex = team index
+ */
+function verwerkTeamBeurt(tIndex) {
+  const input = document.getElementById("invoer");
+  const score = parseInt(input?.value || "0", 10);
+
+  if (isNaN(score) || score < 0 || score > 180 || ongeldigeScores.includes(score)) {
+    alert("Voer een geldige score in tussen 0 en 180.");
+    if (input) { input.value = ''; input.focus(); }
+    return;
+  }
+
+   const team = teams[tIndex];
+  const spelerIndex = teamBeurtIndex % team.spelers.length;
+
+  herstelGeschiedenis.push({ team: tIndex, score, spelerIndex });
+
+  const nieuweScore = team.score - score;
+
+  if (!team.pijlenGegooid) team.pijlenGegooid = 0;
+  team.pijlenGegooid += 3;
+
+  team.geschiedenis.push(score);
+  team.totaalGeschiedenis.push(score);
+
+  if (nieuweScore === 0) {
+    team.legsGewonnen++;
+    sessieGeschiedenis.push(`${team.naam} wint een leg!`);
+
+    // geluid
+    playSound('leg_win.mp3');
+
+    // hoogste finish bij team
+    const huidigeFinish = team.score;
+    if (!team.hoogsteFinish || huidigeFinish > team.hoogsteFinish) {
+      team.hoogsteFinish = huidigeFinish;
+    }
+
+    if (!team.besteLeg || team.pijlenGegooid < team.besteLeg) {
+      team.besteLeg = team.pijlenGegooid;
+    }
+
+    if (team.legsGewonnen >= legsTeWinnen) {
+      playSound('victory.mp3');
+      toonEindscherm(team, teams);
+      return;
+    }
+
+    // reset scores voor alle teams
+    teams.forEach(t => {
+      t.score = startScore;
+      t.pijlenGegooid = 0;
+      t.geschiedenis = [];
+    });
+
+    // shift startvolgorde zodat volgende leg met andere start begint
+    teamBeurtIndex++;
+    beurt = startVolgordeIndex = (startVolgordeIndex + 1) % teams.length;
+  } else if (nieuweScore < 0 || nieuweScore === 1) {
+    alert("Bust!");
+  } else {
+    team.score = nieuweScore;
+    beurt = (beurt + 1) % teams.length;
+    if (beurt === 0) teamBeurtIndex++;
+  }
+
+  if (input) input.value = '';
+  // speel de score van dit team
+const audio = playSound(`${score}.mp3`);
+
+// bepaal volgende team index
+const volgende = beurt;
+
+// zodra geluid klaar is:
+if (audio) {
+  audio.onended = () => {
+    const volgendeTeam = teams[volgende];
+    if (volgendeTeam && volgendeTeam.score <= 170) {
+      const intro = playSound('your_score_is.mp3');
+      if (intro) {
+        intro.onended = () => playSound(`${volgendeTeam.score}.mp3`);
+      } else {
+        playSound(`${volgendeTeam.score}.mp3`);
+      }
+    }
+  };
+}
+
+// daarna UI bijwerken
+  renderTeamSpel();
+}
+
+/**
+ * Voeg een nieuwe speler toe (alleen in single mode).
+ * De gebruiker krijgt een prompt en het spel wordt herstart met nieuwe speler toegevoegd.
+ */
 function nieuweSpelerToevoegen() {
-  if (teamMode) return; // Alleen voor single mode
+  if (teamMode) return; // alleen single mode
   const naam = prompt("Voer de naam van de nieuwe speler in:");
   if (!naam || !naam.trim()) return;
 
-  // Voeg nieuwe speler toe aan bestaande lijst
   spelers.push({
     naam: naam.trim(),
     score: startScore,
@@ -320,15 +474,18 @@ function nieuweSpelerToevoegen() {
     totaalGeschiedenis: [],
     legsGewonnen: 0,
     pijlenGegooid: 0,
-    besteLeg: null
+    besteLeg: null,
+    hoogsteFinish: null
   });
 
   alert(`${naam.trim()} is toegevoegd. Het spel wordt opnieuw gestart.`);
   herstartSpel();
 }
 
+/**
+ * Herstart het spel (reset spelers naar startwaarden maar behoud spelerslijst)
+ */
 function herstartSpel() {
-  // Reset match-variabelen en alle spelers naar startwaarden
   eersteLeg = true;
   sessieGeschiedenis = [];
   herstelGeschiedenis = [];
@@ -339,41 +496,98 @@ function herstartSpel() {
     if (!Array.isArray(s.totaalGeschiedenis)) s.totaalGeschiedenis = [];
     s.pijlenGegooid = 0;
     s.besteLeg = null;
+    s.hoogsteFinish = s.hoogsteFinish || null; // behouden indien aanwezig
     s.legsGewonnen = 0;
   });
 
-  // Reset startvolgorde zodat het spel echt helemaal opnieuw begint
   startVolgordeIndex = 0;
   beurt = 0;
 
-  // Laat speelveld zien en update UI
   document.getElementById("eindscherm").style.display = "none";
   document.getElementById("spel").style.display = "flex";
 
+  toggleSpelControls(true);
+  toggleAddPlayerSmallBtn(true);
   renderSpel();
 }
 
+/**
+ * Undo / herstel laatste invoer (meerdere stappen mogelijk).
+ */
+function herstelLaatsteScore() {
+  if (herstelGeschiedenis.length === 0) {
+    alert("Niets om te herstellen.");
+    return;
+  }
+
+  const laatste = herstelGeschiedenis.pop();
+
+  if (teamMode && laatste?.team !== undefined) {
+    const t = teams[laatste.team];
+    t.score = Math.min(t.score + laatste.score, startScore);
+    beurt = laatste.team;
+    teamBeurtIndex = Math.max(0, laatste.spelerIndex);
+    sessieGeschiedenis.push(`Herstel: ${t.spelers[teamBeurtIndex % t.spelers.length]} (${t.naam}) is weer aan de beurt.`);
+	suppressNextScoreAnnouncement = true;
+    renderTeamSpel();
+  } else if (!teamMode && laatste?.index !== undefined) {
+    const s = spelers[laatste.index];
+    s.score = Math.min(s.score + laatste.score, startScore);
+    if (s.geschiedenis.length) s.geschiedenis.pop();
+    beurt = laatste.index;
+    sessieGeschiedenis.push(`Herstel: ${s.naam} is weer aan de beurt.`);
+	suppressNextScoreAnnouncement = true;
+    renderSpel();
+  }
+}
+
+/**
+ * Stop het spel en refresh de pagina (met confirm).
+ */
+function stopSpel() {
+  if (confirm("Weet je zeker dat je het spel wilt stoppen?")) {
+    toggleSpelControls(false);
+    eersteLeg = true;
+    location.reload();
+  }
+}
+
+/* ===========================
+   5) Render functies
+   - renderSpel() voor single mode
+   - renderTeamSpel() voor team mode
+   - toonEindscherm() voor einde van match
+   =========================== */
+
+/**
+ * Render het spel voor single mode (spelerskaarten).
+ */
 function renderSpel() {
   toggleSpelControls(true);
+  toggleAddPlayerSmallBtn(!teamMode);
 
   const container = document.getElementById("spel");
   container.innerHTML = '';
+
   spelers.forEach((speler, index) => {
+    const isBeurt = index === beurt;
+    const avgHuidig = speler.geschiedenis.length ? gemiddelde(speler.geschiedenis).toFixed(1) : 0;
+    const avgTotaal = speler.totaalGeschiedenis.length ? gemiddelde(speler.totaalGeschiedenis).toFixed(1) : 0;
+
     const div = document.createElement("div");
-    div.className = "speler" + (index === beurt ? " aan-de-beurt" : "");
-    const avg = speler.geschiedenis.length ? (gemiddelde(speler.geschiedenis).toFixed(1)) : 0;
+    div.className = "speler" + (isBeurt ? " aan-de-beurt" : "");
     div.innerHTML = `
       <h2>${speler.naam}</h2>
       <div class="grote-score">${speler.score}</div>
       <p>Legs gewonnen: ${speler.legsGewonnen}/${legsTeWinnen}</p>
-      <p>Gemiddelde: ${speler.geschiedenis.length ? gemiddelde(speler.geschiedenis).toFixed(1) : 0}</p>
-      <p>Gemiddelde totaal: ${speler.totaalGeschiedenis.length ? gemiddelde(speler.totaalGeschiedenis).toFixed(1) : 0}</p>
+      <p>Gemiddelde (huidige leg): ${avgHuidig}</p>
+      <p>Gemiddelde totaal: ${avgTotaal}</p>
       <p>Pijlen gegooid: ${speler.pijlenGegooid || 0}</p>
-	  <p>Beste leg: ${speler.besteLeg || '-'}</p>
-      <p>Checkout hint: <strong>${getCheckoutHint(speler.score)}</strong></p>
       <p>Beste leg: ${speler.besteLeg || '-'}</p>
+      <p>Hoogste finish: ${speler.hoogsteFinish || '-'}</p>
+      <p>Checkout hint: <strong>${getCheckoutHint(speler.score)}</strong></p>
       <p class="geschiedenis">Geschiedenis: ${speler.geschiedenis.join(", ")}</p>
-      ${index === beurt ? `
+      ${isBeurt ? `
         <label for="invoer">Score invoeren:</label>
         <input id="invoer" type="number" min="0" max="180">
         <button onclick="verwerkBeurt(${index})">Bevestig beurt</button>
@@ -382,14 +596,7 @@ function renderSpel() {
     container.appendChild(div);
   });
 
- // Toon kleine "Nieuwe speler" knop (alleen in single mode)
-if (!teamMode) {
-  document.getElementById('addPlayerSmallBtn').style.display = 'inline-block';
-} else {
-  document.getElementById('addPlayerSmallBtn').style.display = 'none';
-}
-
-
+  // Zorg dat input werkt en Enter toetst
   const input = document.getElementById('invoer');
   if (input) {
     input.addEventListener('keydown', function(e) {
@@ -397,11 +604,7 @@ if (!teamMode) {
         e.preventDefault();
       }
     });
-  }
-
-  setTimeout(() => {
-    const input = document.getElementById("invoer");
-    if (input) {
+    setTimeout(() => {
       input.focus();
       input.addEventListener("keydown", function(e) {
         if (e.key === "Enter") {
@@ -409,99 +612,198 @@ if (!teamMode) {
           verwerkBeurt(beurt);
         }
       });
-    }
-
-    if (eersteLeg) {
-      eersteLeg = false;
-      const overlay = document.getElementById("startLogoOverlay");
-      overlay.classList.add("visible");
-      const audio = new Audio('gameon.mp3');
-      audio.play().catch(() => {});
-      audio.onended = () => overlay.classList.remove("visible");
-    }
-
-    if (spelers[beurt] && spelers[beurt].score <= 170) {
-      const intro = new Audio('your_score_is.mp3');
-      const scoreAudio = new Audio(`${spelers[beurt].score}.mp3`);
-      intro.onended = () => scoreAudio.play().catch(() => {});
-      setTimeout(() => intro.play().catch(() => {}), 2500);
-    }
-  }, 0);
-}
-
-function verwerkBeurt(index) {
-  const input = document.getElementById("invoer");
-  const score = parseInt(input.value);
-  if (isNaN(score) || score < 0 || score > 180) {
-    alert("Voer een geldige score in tussen 0 en 180.");
-    input.value = '';
-    input.focus();
-    return;
+    }, 0);
   }
 
-let audio = new Audio(`${score}.wav`);
-audio.play().catch(() => {});
-
-  const speler = spelers[index];
-  const nieuweScore = speler.score - score;
-  vorigeScore = { index, score };
-  herstelGeschiedenis.push({ index, score });
-
-  if (!speler.pijlenGegooid) speler.pijlenGegooid = 0;
-  speler.pijlenGegooid += 3;
-
-if (nieuweScore === 0) {
-  speler.legsGewonnen++;
-  sessieGeschiedenis.push(`${speler.naam} wint een leg!`);
-
-  // geluid leg gewonnen
-  new Audio('leg_win.mp3').play().catch(() => {});
-
-  if (!speler.besteLeg || speler.pijlenGegooid < speler.besteLeg) {
-    speler.besteLeg = speler.pijlenGegooid;
+  // start overlay en audio bij eerste leg
+  if (eersteLeg) {
+    eersteLeg = false;
+    const overlay = document.getElementById("startLogoOverlay");
+    overlay.classList.add("visible");
+    const audio = playSound('gameon.mp3');
+    if (audio) audio.onended = () => overlay.classList.remove("visible");
+    else overlay.classList.remove("visible");
   }
 
-if (speler.legsGewonnen >= legsTeWinnen) {
-  // geluid sessie gewonnen
-  const winSound = new Audio('victory.mp3');
-  winSound.play().catch(() => {});
-  toonEindscherm(speler, spelers);
-  return;
+  suppressNextScoreAnnouncement = false;
+
+  updateStatistieken();
 }
 
+/**
+ * Render het spel voor team mode.
+ */
+function renderTeamSpel() {
+  toggleSpelControls(true);
+  toggleAddPlayerSmallBtn(false); // geen nieuwe speler knop in teammode
 
-    spelers.forEach(s => {
-    s.score = startScore;
-    s.geschiedenis = []; // reset huidige leg
-    s.pijlenGegooid = 0;
-});
+  const container = document.getElementById("spel");
+  container.innerHTML = '';
 
-    beurt = startVolgordeIndex = (startVolgordeIndex + 1) % spelers.length;
-  } else if (nieuweScore < 0 || nieuweScore === 1) {
-    alert("Bust!");
+  teams.forEach((team, tIndex) => {
+    const spelerNaam = team.spelers[teamBeurtIndex % Math.max(1, team.spelers.length)] || "Speler";
+    const isBeurt = tIndex === beurt;
+
+    const div = document.createElement("div");
+    div.className = "speler" + (isBeurt ? " aan-de-beurt" : "");
+    div.innerHTML = `
+      <h2>${spelerNaam} (${team.naam})</h2>
+      <div class="grote-score">${team.score}</div>
+      <p>Legs gewonnen: ${team.legsGewonnen}/${legsTeWinnen}</p>
+      <p>Gemiddelde (huidige leg): ${team.geschiedenis.length ? gemiddelde(team.geschiedenis).toFixed(1) : 0}</p>
+      <p>Gemiddelde totaal: ${team.totaalGeschiedenis.length ? gemiddelde(team.totaalGeschiedenis).toFixed(1) : 0}</p>
+      <p>Pijlen gegooid: ${team.pijlenGegooid || 0}</p>
+      <p>Beste leg: ${team.besteLeg || '-'}</p>
+      <p>Hoogste finish: ${team.hoogsteFinish || '-'}</p>
+      <p>Checkout hint: <strong>${getCheckoutHint(team.score)}</strong></p>
+      ${isBeurt ? `
+        <label for="invoer">Score invoeren:</label>
+        <input id="invoer" type="number" min="0" max="180">
+        <button onclick="verwerkTeamBeurt(${tIndex})">Bevestig beurt</button>
+      ` : ''}
+    `;
+    container.appendChild(div);
+  });
+
+  // input focus / enter handling
+  const input = document.getElementById('invoer');
+  if (input) {
+    input.addEventListener('keydown', function(e) {
+      if (["e", "E", "+", "-"].includes(e.key)) {
+        e.preventDefault();
+      }
+    });
+    setTimeout(() => {
+      input.focus();
+      input.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+          if (input.value.trim() === "") input.value = "0";
+          verwerkTeamBeurt(beurt);
+        }
+      });
+    }, 0);
+  }
+
+  if (eersteLeg) {
+    eersteLeg = false;
+    const overlay = document.getElementById("startLogoOverlay");
+    overlay.classList.add("visible");
+    const audio = playSound('gameon.mp3');
+    if (audio) audio.onended = () => overlay.classList.remove("visible");
+    else overlay.classList.remove("visible");
+  }
+
+  suppressNextScoreAnnouncement = false;
+
+  updateStatistieken();
+}
+
+/**
+ * Toon het eindscherm met ranglijst en mogelijkheid om opnieuw te spelen.
+ * 'winnaar' is het winnende speler- of team-object. 'deelnemers' is array van alle deelnemers.
+ */
+function toonEindscherm(winnaar, deelnemers) {
+  toggleSpelControls(false);
+  document.getElementById("spel").style.display = "none";
+
+  const container = document.getElementById("eindscherm");
+  container.style.display = "block";
+
+  // Sorteer overige deelnemers op resterende score (oplopen)
+  const overige = [...deelnemers]
+    .filter(s => s.naam !== winnaar.naam)
+    .sort((a, b) => a.score - b.score);
+
+  const ranglijst = [winnaar, ...overige];
+
+  let html = `
+    <h1>🏆 Winnaar: <span style="font-size: 3rem; color: gold;">${winnaar.naam}</span></h1>
+    <h2>Ranglijst</h2>
+    <div class="flex-container">
+  `;
+
+  ranglijst.forEach((speler, idx) => {
+    const avg = speler.geschiedenis ? (gemiddelde(speler.geschiedenis).toFixed(1)) : 0;
+    const isWinnaar = speler.naam === winnaar.naam;
+
+    let podiumClass = "";
+    if (idx === 0) podiumClass = "podium-goud";
+    else if (idx === 1) podiumClass = "podium-zilver";
+    else if (idx === 2) podiumClass = "podium-brons";
+
+    html += `
+      <div class="speler ${isWinnaar ? "winnaar-highlight" : ""} ${podiumClass}">
+        <h2>#${idx + 1} ${idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : ""}</h2>
+        <h3>${speler.naam}</h3>
+        <p>Legs gewonnen: ${speler.legsGewonnen}/${legsTeWinnen}</p>
+        ${avg ? `<p>Gemiddelde score: ${avg}</p>` : ""}
+        <p>Pijlen gegooid: ${speler.pijlenGegooid || 0}</p>
+        <p>Beste leg: ${speler.besteLeg || '-'}</p>
+        <p>Hoogste finish: ${speler.hoogsteFinish || '-'}</p>
+      </div>
+    `;
+  });
+
+  html += `</div><button onclick="opnieuwSpelen()">Opnieuw spelen</button>`;
+
+  // Voeg hier knop toe om nieuwe speler toe te voegen (alleen single mode)
+  if (!teamMode) {
+    html += `<button style="background-color:#28a745; margin-left:10px;" onclick="nieuweSpelerToevoegen()">➕ Nieuwe speler toevoegen</button>`;
+  }
+
+  container.innerHTML = html;
+}
+
+/**
+ * Opnieuw spelen: reset scores maar behoud spelers/teams en verschuif startvolgorde.
+ */
+function opnieuwSpelen() {
+  document.getElementById("eindscherm").style.display = "none";
+  document.getElementById("spel").style.display = "flex";
+
+  if (teamMode) {
+    teams.forEach(t => {
+      t.score = startScore;
+      t.pijlenGegooid = 0;
+      t.besteLeg = null;
+      t.legsGewonnen = 0;
+    });
+    beurt = startVolgordeIndex = (startVolgordeIndex + 1) % teams.length;
+    renderTeamSpel();
   } else {
-    speler.score = nieuweScore;
-    speler.geschiedenis.push(score);
-    speler.totaalGeschiedenis.push(score);
-    beurt = (beurt + 1) % spelers.length;
+    spelers.forEach(s => {
+      s.score = startScore;
+      s.geschiedenis = [];
+      s.pijlenGegooid = 0;
+      s.besteLeg = null;
+      s.legsGewonnen = 0;
+    });
+    beurt = startVolgordeIndex = (startVolgordeIndex + 1) % spelers.length;
+    renderSpel();
   }
 
-  input.value = '';
-  renderSpel();
-}
-function updateHoogsteFinish(index, value) {
-  const finish = parseInt(value);
-  if (isNaN(finish) || finish < 2 || finish > 170) return;
-  spelers[index].hoogsteFinish = finish;
+  toggleSpelControls(true);
+  toggleAddPlayerSmallBtn(!teamMode);
 }
 
+/* ===========================
+   6) Helpers (gemiddelde, checkout hints, statistieken)
+   =========================== */
+
+/**
+ * Bereken gemiddelde van een array getallen.
+ */
 function gemiddelde(beurten) {
-  return beurten.length ? beurten.reduce((a, b) => a + b, 0) / beurten.length : 0;
+  return beurten && beurten.length ? beurten.reduce((a, b) => a + b, 0) / beurten.length : 0;
 }
 
+/**
+ * Checkout hints tabel (ongewijzigd ten opzichte van origineel).
+ * Retourneert string of '-' wanneer geen hint gevonden.
+ */
 function getCheckoutHint(score) {
   const hints = {
- 170: "T20, T20, Bull", 167: "T20, T19, Bull", 164: "T20, T18, Bull", 161: "T20, T17, Bull",
+    170: "T20, T20, Bull", 167: "T20, T19, Bull", 164: "T20, T18, Bull", 161: "T20, T17, Bull",
     160: "T20, T20, D20", 158: "T20, T20, D19", 157: "T20, T19, D20", 156: "T20, T20, D18",
     155: "T20, T19, D19", 154: "T20. T18, D20", 153: "T20, T19, D18", 152: "T20, T20, D16", 151: "T20, T17, D20",
     150: "T20, T18, D18", 149: "T20, T19, D16", 148: "T20, T16, D20", 147: "T20, T17, D18",
@@ -532,121 +834,41 @@ function getCheckoutHint(score) {
     19: "3, D8", 18: "D9", 17: "1, D8", 16: "D8", 15: "7, D4", 14: "D7", 13: "5, D4",
     12: "D6", 11: "3, D4", 10: "D5", 9: "1, D4", 8: "D4", 7: "3, D2", 6: "D3",
     5: "1, D2", 4: "D2", 3: "1, D1", 2: "D1"
-
   };
   return hints[score] || "-";
 }
 
-function herstelLaatsteScore() {
-  if (herstelGeschiedenis.length === 0) {
-    alert("Niets om te herstellen.");
-    return;
-  }
-
-  const laatste = herstelGeschiedenis.pop();
-
-  if (teamMode && laatste?.team !== undefined) {
-    const t = teams[laatste.team];
-    t.score = Math.min(t.score + laatste.score, startScore);
-    beurt = laatste.team;
-    teamBeurtIndex = Math.max(0, laatste.spelerIndex);
-    sessieGeschiedenis.push(`Herstel: ${t.spelers[teamBeurtIndex % t.spelers.length]} (${t.naam}) is weer aan de beurt.`);
-    renderTeamSpel();
-  } else if (!teamMode && laatste?.index !== undefined) {
-    const s = spelers[laatste.index];
-    s.score = Math.min(s.score + laatste.score, startScore);
-    if (s.geschiedenis.length) s.geschiedenis.pop();
-    beurt = laatste.index;
-    sessieGeschiedenis.push(`Herstel: ${s.naam} is weer aan de beurt.`);
-    renderSpel();
-  }
-}
-
-function toonEindscherm(winnaar, deelnemers) {
-  toggleSpelControls(false);
-  document.getElementById("spel").style.display = "none";
-
-  const container = document.getElementById("eindscherm");
-  container.style.display = "block";
-
-  // Sorteer deelnemers behalve winnaar op resterende score oplopend (minste punten eerst)
-  const overige = [...deelnemers]
-    .filter(s => s.naam !== winnaar.naam)
-    .sort((a, b) => a.score - b.score);
-
-  // Zet winnaar links, gevolgd door rest
-  const ranglijst = [winnaar, ...overige];
-
-  let html = `
-    <h1>🏆 Winnaar: <span style="font-size: 3rem; color: gold;">${winnaar.naam}</span></h1>
-    <h2>Ranglijst</h2>
-    <div class="flex-container">
-  `;
-
-  ranglijst.forEach((speler, idx) => {
-    const avg = speler.geschiedenis ? (gemiddelde(speler.geschiedenis).toFixed(1)) : 0;
-    const isWinnaar = speler.naam === winnaar.naam;
-
-    // podium-classes voor #1–#3
-    let podiumClass = "";
-    if (idx === 0) podiumClass = "podium-goud";
-    else if (idx === 1) podiumClass = "podium-zilver";
-    else if (idx === 2) podiumClass = "podium-brons";
-
-    html += `
-      <div class="speler ${isWinnaar ? "winnaar-highlight" : ""} ${podiumClass}">
-        <h2>#${idx + 1} ${idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : ""}</h2>
-        <h3>${speler.naam}</h3>
-        <p>Legs gewonnen: ${speler.legsGewonnen}/${legsTeWinnen}</p>
-        ${avg ? `<p>Gemiddelde score: ${avg}</p>` : ""}
-        <p>Pijlen gegooid: ${speler.pijlenGegooid || 0}</p>
-        <p>Beste leg: ${speler.besteLeg || '-'}</p>
-      </div>
-    `;
+/**
+ * Update statistieken - in jouw setup is de statistieken-div weggehaald,
+ * dus deze functie werkt alleen als het lijst element aanwezig is.
+ * We vullen maximaal de laatste 10 items.
+ */
+function updateStatistieken() {
+  const lijst = document.getElementById('statistiekenLijst');
+  if (!lijst) return;
+  lijst.innerHTML = '';
+  sessieGeschiedenis.slice(-10).forEach(item => {
+    const li = document.createElement('li');
+    li.textContent = item;
+    lijst.appendChild(li);
   });
-
-  html += `</div><button onclick="opnieuwSpelen()">Opnieuw spelen</button>`;
-
-  // Voeg hier knop toe om nieuwe speler toe te voegen (alleen single mode)
-  if (!teamMode) {
-    html += `<button style="background-color:#28a745; margin-left:10px;" onclick="nieuweSpelerToevoegen()">➕ Nieuwe speler toevoegen</button>`;
-  }
-
-  container.innerHTML = html;
 }
 
-
-function opnieuwSpelen() {
-  document.getElementById("eindscherm").style.display = "none";
-  document.getElementById("spel").style.display = "flex";
-
-  if (teamMode) {
-    teams.forEach(t => {
-      t.score = startScore;
-      t.pijlenGegooid = 0;
-      t.besteLeg = null;
-      t.legsGewonnen = 0;
-    });
-    beurt = startVolgordeIndex = (startVolgordeIndex + 1) % teams.length;
-    renderTeamSpel();
-  } else {
-    spelers.forEach(s => {
-      s.score = startScore;
-      s.geschiedenis = [];
-      s.pijlenGegooid = 0;
-      s.besteLeg = null;
-      s.legsGewonnen = 0;
-    });
-    beurt = startVolgordeIndex = (startVolgordeIndex + 1) % spelers.length;
-    renderSpel();
-  }
-}
-
-function stopSpel() {
-  if (confirm("Weet je zeker dat je het spel wilt stoppen?")) {
+/* ===========================
+   Initialisatie: verberg standaard knoppen totdat spel start
+   =========================== */
+document.addEventListener("DOMContentLoaded", () => {
   toggleSpelControls(false);
-    eersteLeg = true;
-    location.reload();
+  toggleAddPlayerSmallBtn(false);
+});
+
+function toggleInput(index) {
+  const select = document.getElementById(`spelerSelect${index}`);
+  const input = document.getElementById(`spelerInput${index}`);
+  if (select.value === "Anders") {
+    input.style.display = "inline-block";
+  } else {
+    input.style.display = "none";
+    input.value = ""; // leegmaken als weggeklikt
   }
 }
-
