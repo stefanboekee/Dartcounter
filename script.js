@@ -74,9 +74,10 @@ function playSound(src) {
     }
 
     const audio = new Audio(src);
-    audio.play().catch(() => {});
+	audio.playbackRate = 1.25; // 🎧 Speelt geluid 25% sneller af
     huidigeAudio = audio;
-
+    audio.play().catch(() => {});
+	  
     // schoonmaken wanneer audio is afgelopen
     audio.onended = () => {
       if (huidigeAudio === audio) huidigeAudio = null;
@@ -884,4 +885,5 @@ function toggleInput(index) {
     input.style.display = "none";
     input.value = ""; // leegmaken als weggeklikt
   }
+
 }
