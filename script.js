@@ -205,6 +205,7 @@ function setupNamen() {
     "Stefan",
     "Kylian",
     "Joshua",
+	"Sanne",
     "Anders"
   ];
 
@@ -580,7 +581,7 @@ function renderSpel() {
       <h2>${speler.naam}</h2>
       <div class="grote-score">${speler.score}</div>
       <p>Legs gewonnen: ${speler.legsGewonnen}/${legsTeWinnen}</p>
-      <p>Gemiddelde (huidige leg): ${avgHuidig}</p>
+      <p>Gemiddelde: ${avgHuidig}</p>
       <p>Gemiddelde totaal: ${avgTotaal}</p>
       <p>Pijlen gegooid: ${speler.pijlenGegooid || 0}</p>
       <p>Beste leg: ${speler.besteLeg || '-'}</p>
@@ -650,7 +651,7 @@ function renderTeamSpel() {
       <h2>${spelerNaam} (${team.naam})</h2>
       <div class="grote-score">${team.score}</div>
       <p>Legs gewonnen: ${team.legsGewonnen}/${legsTeWinnen}</p>
-      <p>Gemiddelde (huidige leg): ${team.geschiedenis.length ? gemiddelde(team.geschiedenis).toFixed(1) : 0}</p>
+      <p>Gemiddelde: ${team.geschiedenis.length ? gemiddelde(team.geschiedenis).toFixed(1) : 0}</p>
       <p>Gemiddelde totaal: ${team.totaalGeschiedenis.length ? gemiddelde(team.totaalGeschiedenis).toFixed(1) : 0}</p>
       <p>Pijlen gegooid: ${team.pijlenGegooid || 0}</p>
       <p>Beste leg: ${team.besteLeg || '-'}</p>
@@ -702,6 +703,10 @@ function renderTeamSpel() {
  * Toon het eindscherm met ranglijst en mogelijkheid om opnieuw te spelen.
  * 'winnaar' is het winnende speler- of team-object. 'deelnemers' is array van alle deelnemers.
  */
+/**
+ * Toon het eindscherm met ranglijst en mogelijkheid om opnieuw te spelen.
+ * 'winnaar' is het winnende speler- of team-object. 'deelnemers' is array van alle deelnemers.
+ */
 function toonEindscherm(winnaar, deelnemers) {
   toggleSpelControls(false);
   document.getElementById("spel").style.display = "none";
@@ -709,12 +714,15 @@ function toonEindscherm(winnaar, deelnemers) {
   const container = document.getElementById("eindscherm");
   container.style.display = "block";
 
-  // Sorteer overige deelnemers op resterende score (oplopen)
-  const overige = [...deelnemers]
-    .filter(s => s.naam !== winnaar.naam)
-    .sort((a, b) => a.score - b.score);
-
-  const ranglijst = [winnaar, ...overige];
+  // Sorteer deelnemers eerst op aantal gewonnen legs (desc), daarna op resterende score (asc)
+  const gesorteerd = [...deelnemers].sort((a, b) => {
+    const legsA = a.legsGewonnen || 0;
+    const legsB = b.legsGewonnen || 0;
+    if (legsB !== legsA) return legsB - legsA; // meer legs -> hoger
+    const scoreA = (typeof a.score === "number") ? a.score : Infinity;
+    const scoreB = (typeof b.score === "number") ? b.score : Infinity;
+    return scoreA - scoreB; // lagere score -> hoger
+  });
 
   let html = `
     <h1>🏆 Winnaar: <span style="font-size: 3rem; color: gold;">${winnaar.naam}</span></h1>
@@ -722,10 +730,14 @@ function toonEindscherm(winnaar, deelnemers) {
     <div class="flex-container">
   `;
 
-  ranglijst.forEach((speler, idx) => {
-    const avg = speler.geschiedenis ? (gemiddelde(speler.geschiedenis).toFixed(1)) : 0;
-    const isWinnaar = speler.naam === winnaar.naam;
+  gesorteerd.forEach((speler, idx) => {
+    // bereken gemiddelde over alle gegooide scores (totaalGeschiedenis)
+    const totaal = Array.isArray(speler.totaalGeschiedenis) ? speler.totaalGeschiedenis : [];
+    const avgTotal = totaal.length ? gemiddelde(totaal).toFixed(1) : 0;
 
+    const isWinnaar = (speler.naam === winnaar.naam);
+
+    // podium-classes voor #1–#3
     let podiumClass = "";
     if (idx === 0) podiumClass = "podium-goud";
     else if (idx === 1) podiumClass = "podium-zilver";
@@ -735,8 +747,9 @@ function toonEindscherm(winnaar, deelnemers) {
       <div class="speler ${isWinnaar ? "winnaar-highlight" : ""} ${podiumClass}">
         <h2>#${idx + 1} ${idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : ""}</h2>
         <h3>${speler.naam}</h3>
-        <p>Legs gewonnen: ${speler.legsGewonnen}/${legsTeWinnen}</p>
-        ${avg ? `<p>Gemiddelde score: ${avg}</p>` : ""}
+        <p>Legs gewonnen: ${speler.legsGewonnen || 0}/${legsTeWinnen}</p>
+        <p>Resterende score: ${speler.score}</p>
+        <p>Gemiddelde score: ${avgTotal}</p>
         <p>Pijlen gegooid: ${speler.pijlenGegooid || 0}</p>
         <p>Beste leg: ${speler.besteLeg || '-'}</p>
         <p>Hoogste finish: ${speler.hoogsteFinish || '-'}</p>
