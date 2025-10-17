@@ -279,13 +279,22 @@ input.naamveld {
 }
 
 .naamveld-select, .naamveld-input {
-  width: 220px;
-  margin: 3px 0 10px 0;
+  width: 200px;      /* was 150px */
+  font-size: 1rem;   /* iets groter lettertype */
+  padding: 6px;      /* wat meer ruimte binnenin */
+  margin: 10px 0 20px 0;
   display: inline-block;
   vertical-align: middle;
 }
 .naamveld-input {
   display: none;
+  width: 150px !important;   /* ✅ forceer vaste breedte */
+  max-width: 150px !important;
+  padding: 6px;
+  font-size: 0.9rem;
+  box-sizing: border-box;
 }
+
+
 
 
