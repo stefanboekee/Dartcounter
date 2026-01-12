@@ -273,98 +273,115 @@ function verwerkBeurt(index) {
 
   if (isNaN(score) || score < 0 || score > 180 || ongeldigeScores.includes(score)) {
     alert("Voer een geldige score in tussen 0 en 180.");
-    if (input) { input.value = ''; input.focus(); }
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
     return;
   }
-  
+
   const speler = spelers[index];
   const nieuweScore = speler.score - score;
 
-  // push naar herstel-stapel
-  herstelGeschiedenis.push({ index, score });
+  let isLegOfMatchWin = false;
 
-  // update pijlen gegooid (we tellen per beurt 3 pijlen)
-  if (!speler.pijlenGegooid) speler.pijlenGegooid = 0;
-  speler.pijlenGegooid += 3;
+  // push naar undo stack
+  herstelGeschiedenis.push({
+  index,
+  score,
+  pijlen: 3
+});
 
-  // wanneer leg gewonnen
-if (nieuweScore === 0) {
-  // --- belangrijk: de uitgooi-worp meetellen in de gemiddelden ---
-  speler.geschiedenis.push(score);
-  speler.totaalGeschiedenis.push(score);
 
-  speler.legsGewonnen++;
-  sessieGeschiedenis.push(`${speler.naam} wint een leg!`);
+  // pijlen tellen
+  speler.pijlenGegooid = (speler.pijlenGegooid || 0) + 3;
 
-  // speel leg-geluid
-  playSound('leg_win.mp3');
+  /* =========================
+     🎯 LEG OF MATCH GEWONNEN
+     ========================= */
+  if (nieuweScore === 0) {
+    isLegOfMatchWin = true;
 
-  // Automatisch hoogste finish bepalen
-  const huidigeFinish = speler.score;
-  if (!speler.hoogsteFinish || huidigeFinish > speler.hoogsteFinish) {
-    speler.hoogsteFinish = huidigeFinish;
-  }
+    speler.geschiedenis.push(score);
+    speler.totaalGeschiedenis.push(score);
+    speler.legsGewonnen++;
+    sessieGeschiedenis.push(`${speler.naam} wint een leg!`);
 
-    // beste leg (minimale pijlen)
+    // hoogste finish
+    if (!speler.hoogsteFinish || speler.score > speler.hoogsteFinish) {
+      speler.hoogsteFinish = speler.score;
+    }
+
+    // beste leg (min pijlen)
     if (!speler.besteLeg || speler.pijlenGegooid < speler.besteLeg) {
       speler.besteLeg = speler.pijlenGegooid;
     }
 
-    // reset scores voor volgende leg of toon eindscherm bij match-winst
+    // 🏆 MATCH GEWONNEN → alleen victory
     if (speler.legsGewonnen >= legsTeWinnen) {
-      // spe(e)l gewonnen -> eindgeluid en eindscherm
       playSound('victory.mp3');
       toonEindscherm(speler, spelers);
       return;
     }
 
-    // reset voor alle spelers voor nieuwe leg
+    // 🎉 NORMALE LEG WIN → alleen leg win
+    playSound('leg_win.mp3');
+
+    // reset spelers voor nieuwe leg
     spelers.forEach(s => {
       s.score = startScore;
       s.geschiedenis = [];
       s.pijlenGegooid = 0;
     });
 
-    // update beurt/startvolgorde
+    // volgende startspeler
     beurt = startVolgordeIndex = (startVolgordeIndex + 1) % spelers.length;
-  } else if (nieuweScore < 0 || nieuweScore === 1) {
-    // bust
+  }
+
+  /* =========================
+     ❌ BUST
+     ========================= */
+  else if (nieuweScore < 0 || nieuweScore === 1) {
     alert("Bust!");
-  } else {
-    // normale score, update speler
+  }
+
+  /* =========================
+     ✅ NORMALE SCORE
+     ========================= */
+  else {
     speler.score = nieuweScore;
     speler.geschiedenis.push(score);
     speler.totaalGeschiedenis.push(score);
     beurt = (beurt + 1) % spelers.length;
   }
 
-  // leeg input en render
+  // input reset
   if (input) input.value = '';
-// speel de score van de huidige speler
-const audio = playSound(`${score}.mp3`);
 
-// bepaal volgende speler index
-const volgende = beurt;
+  /* =========================
+     🔊 SCORE AUDIO (alleen als GEEN leg/match win)
+     ========================= */
+  if (!isLegOfMatchWin) {
+    const audio = playSound(`${score}.mp3`);
 
-// zodra het scoregeluid klaar is:
-if (audio) {
-  audio.onended = () => {
-    // check of volgende speler <= 170 heeft
-    const volgendeSpeler = spelers[volgende];
-    if (volgendeSpeler && volgendeSpeler.score <= 170) {
-      const intro = playSound('your_score_is.mp3');
-      if (intro) {
-        intro.onended = () => playSound(`${volgendeSpeler.score}.mp3`);
-      } else {
-        playSound(`${volgendeSpeler.score}.mp3`);
-      }
+    if (audio) {
+      audio.onended = () => {
+        const volgendeSpeler = spelers[beurt];
+        if (volgendeSpeler && volgendeSpeler.score <= 170) {
+          const intro = playSound('your_score_is.mp3');
+          if (intro) {
+            intro.onended = () => playSound(`${volgendeSpeler.score}.mp3`);
+          } else {
+            playSound(`${volgendeSpeler.score}.mp3`);
+          }
+        }
+      };
     }
-  };
+  }
+
+  renderSpel();
 }
 
-// daarna de UI bijwerken
-renderSpel();
-}
 
 /**
  * Verwerk een beurt voor team mode.
@@ -376,87 +393,119 @@ function verwerkTeamBeurt(tIndex) {
 
   if (isNaN(score) || score < 0 || score > 180 || ongeldigeScores.includes(score)) {
     alert("Voer een geldige score in tussen 0 en 180.");
-    if (input) { input.value = ''; input.focus(); }
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
     return;
   }
 
-   const team = teams[tIndex];
+  const team = teams[tIndex];
   const spelerIndex = teamBeurtIndex % team.spelers.length;
-
-  herstelGeschiedenis.push({ team: tIndex, score, spelerIndex });
-
   const nieuweScore = team.score - score;
 
-  if (!team.pijlenGegooid) team.pijlenGegooid = 0;
-  team.pijlenGegooid += 3;
+  let isLegOfMatchWin = false;
 
-  team.geschiedenis.push(score);
-  team.totaalGeschiedenis.push(score);
+  // undo stack
+  herstelGeschiedenis.push({
+  team: tIndex,
+  score,
+  spelerIndex,
+  pijlen: 3
+});
 
+
+  // pijlen tellen
+  team.pijlenGegooid = (team.pijlenGegooid || 0) + 3;
+
+  /* =========================
+     🎯 LEG OF MATCH GEWONNEN
+     ========================= */
   if (nieuweScore === 0) {
+    isLegOfMatchWin = true;
+
+    team.geschiedenis.push(score);
+    team.totaalGeschiedenis.push(score);
     team.legsGewonnen++;
     sessieGeschiedenis.push(`${team.naam} wint een leg!`);
 
-    // geluid
-    playSound('leg_win.mp3');
-
-    // hoogste finish bij team
-    const huidigeFinish = team.score;
-    if (!team.hoogsteFinish || huidigeFinish > team.hoogsteFinish) {
-      team.hoogsteFinish = huidigeFinish;
+    // hoogste finish
+    if (!team.hoogsteFinish || team.score > team.hoogsteFinish) {
+      team.hoogsteFinish = team.score;
     }
 
+    // beste leg (min pijlen)
     if (!team.besteLeg || team.pijlenGegooid < team.besteLeg) {
       team.besteLeg = team.pijlenGegooid;
     }
 
+    // 🏆 MATCH GEWONNEN → alleen victory
     if (team.legsGewonnen >= legsTeWinnen) {
       playSound('victory.mp3');
       toonEindscherm(team, teams);
       return;
     }
 
-    // reset scores voor alle teams
+    // 🎉 NORMALE LEG WIN → alleen leg win
+    playSound('leg_win.mp3');
+
+    // reset teams voor nieuwe leg
     teams.forEach(t => {
       t.score = startScore;
       t.pijlenGegooid = 0;
       t.geschiedenis = [];
     });
 
-    // shift startvolgorde zodat volgende leg met andere start begint
+    // volgende startteam + spelerrotatie
     teamBeurtIndex++;
     beurt = startVolgordeIndex = (startVolgordeIndex + 1) % teams.length;
-  } else if (nieuweScore < 0 || nieuweScore === 1) {
-    alert("Bust!");
-  } else {
-    team.score = nieuweScore;
-    beurt = (beurt + 1) % teams.length;
-    if (beurt === 0) teamBeurtIndex++;
   }
 
-  if (input) input.value = '';
-  // speel de score van dit team
-const audio = playSound(`${score}.mp3`);
+  /* =========================
+     ❌ BUST
+     ========================= */
+  else if (nieuweScore < 0 || nieuweScore === 1) {
+    alert("Bust!");
+  }
 
-// bepaal volgende team index
-const volgende = beurt;
+  /* =========================
+     ✅ NORMALE SCORE
+     ========================= */
+  else {
+    team.score = nieuweScore;
+    team.geschiedenis.push(score);
+    team.totaalGeschiedenis.push(score);
 
-// zodra geluid klaar is:
-if (audio) {
-  audio.onended = () => {
-    const volgendeTeam = teams[volgende];
-    if (volgendeTeam && volgendeTeam.score <= 170) {
-      const intro = playSound('your_score_is.mp3');
-      if (intro) {
-        intro.onended = () => playSound(`${volgendeTeam.score}.mp3`);
-      } else {
-        playSound(`${volgendeTeam.score}.mp3`);
-      }
+    beurt = (beurt + 1) % teams.length;
+    if (beurt === 0) {
+      teamBeurtIndex++;
     }
-  };
-}
+  }
 
-// daarna UI bijwerken
+  // input reset
+  if (input) input.value = '';
+
+  /* =========================
+     🔊 SCORE AUDIO (alleen als GEEN leg/match win)
+     ========================= */
+  if (!isLegOfMatchWin) {
+    const audio = playSound(`${score}.mp3`);
+
+    if (audio) {
+      audio.onended = () => {
+        const volgendeTeam = teams[beurt];
+        if (volgendeTeam && volgendeTeam.score <= 170) {
+          const intro = playSound('your_score_is.mp3');
+          if (intro) {
+            intro.onended = () => playSound(`${volgendeTeam.score}.mp3`);
+          } else {
+            playSound(`${volgendeTeam.score}.mp3`);
+          }
+        }
+      };
+    }
+  }
+
   renderTeamSpel();
 }
 
@@ -465,7 +514,8 @@ if (audio) {
  * De gebruiker krijgt een prompt en het spel wordt herstart met nieuwe speler toegevoegd.
  */
 function nieuweSpelerToevoegen() {
-  if (teamMode) return; // alleen single mode
+  if (teamMode) return;
+
   const naam = prompt("Voer de naam van de nieuwe speler in:");
   if (!naam || !naam.trim()) return;
 
@@ -480,9 +530,9 @@ function nieuweSpelerToevoegen() {
     hoogsteFinish: null
   });
 
-  alert(`${naam.trim()} is toegevoegd. Het spel wordt opnieuw gestart.`);
-  herstartSpel();
+  renderSpel();
 }
+
 
 /**
  * Herstart het spel (reset spelers naar startwaarden maar behoud spelerslijst)
@@ -527,16 +577,47 @@ function herstelLaatsteScore() {
   if (teamMode && laatste?.team !== undefined) {
     const t = teams[laatste.team];
     t.score = Math.min(t.score + laatste.score, startScore);
-    beurt = laatste.team;
-    teamBeurtIndex = Math.max(0, laatste.spelerIndex);
+
+// geschiedenis & gemiddelde herstellen
+if (t.geschiedenis.length) t.geschiedenis.pop();
+if (t.totaalGeschiedenis.length) t.totaalGeschiedenis.pop();
+
+// pijlen herstellen
+t.pijlenGegooid = Math.max(0, (t.pijlenGegooid || 0) - (laatste.pijlen || 3));
+
+// beurt herstellen
+beurt = laatste.team;
+teamBeurtIndex = Math.max(0, laatste.spelerIndex);
+
+sessieGeschiedenis.push(
+  `Herstel: ${t.spelers[teamBeurtIndex % t.spelers.length]} (${t.naam}) is weer aan de beurt.`
+);
+suppressNextScoreAnnouncement = true;
+renderTeamSpel();
+
     sessieGeschiedenis.push(`Herstel: ${t.spelers[teamBeurtIndex % t.spelers.length]} (${t.naam}) is weer aan de beurt.`);
 	suppressNextScoreAnnouncement = true;
     renderTeamSpel();
   } else if (!teamMode && laatste?.index !== undefined) {
     const s = spelers[laatste.index];
-    s.score = Math.min(s.score + laatste.score, startScore);
-    if (s.geschiedenis.length) s.geschiedenis.pop();
-    beurt = laatste.index;
+
+// score terug
+s.score = Math.min(s.score + laatste.score, startScore);
+
+// geschiedenis & gemiddelde herstellen
+if (s.geschiedenis.length) s.geschiedenis.pop();
+if (s.totaalGeschiedenis.length) s.totaalGeschiedenis.pop();
+
+// pijlen terugzetten
+s.pijlenGegooid = Math.max(0, (s.pijlenGegooid || 0) - (laatste.pijlen || 3));
+
+// beurt terug
+beurt = laatste.index;
+
+sessieGeschiedenis.push(`Herstel: ${s.naam} is weer aan de beurt.`);
+suppressNextScoreAnnouncement = true;
+renderSpel();
+
     sessieGeschiedenis.push(`Herstel: ${s.naam} is weer aan de beurt.`);
 	suppressNextScoreAnnouncement = true;
     renderSpel();
@@ -579,6 +660,7 @@ function renderSpel() {
     const div = document.createElement("div");
     div.className = "speler" + (isBeurt ? " aan-de-beurt" : "");
     div.innerHTML = `
+	  <span class="remove-speler" onclick="verwijderSpeler(${index})">✖</span>
       <h2>${speler.naam}</h2>
       <div class="grote-score">${speler.score}</div>
       <p>Legs gewonnen: ${speler.legsGewonnen}/${legsTeWinnen}</p>
@@ -885,4 +967,24 @@ function toggleInput(index) {
     input.style.display = "none";
     input.value = ""; // leegmaken als weggeklikt
   }
+}
+
+function verwijderSpeler(index) {
+  if (!confirm(`Weet je zeker dat je ${spelers[index].naam} wilt verwijderen?`)) return;
+
+  spelers.splice(index, 1);
+
+  // Als huidige beurt speler was → beurt corrigeren
+  if (beurt >= spelers.length) {
+    beurt = 0;
+  }
+
+  // Veiligheid: minimaal 1 speler
+  if (spelers.length === 0) {
+    alert("Geen spelers meer over. Spel wordt gestopt.");
+    stopSpel();
+    return;
+  }
+
+  renderSpel();
 }

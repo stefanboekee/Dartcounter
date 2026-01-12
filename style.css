@@ -295,6 +295,46 @@ input.naamveld {
   box-sizing: border-box;
 }
 
+.speler {
+  position: relative;
+}
+
+.remove-speler {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #999;
+}
+
+.remove-speler:hover {
+  color: red;
+}
+.team-spelers {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.team-speler {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #ddd;
+}
+
+.team-speler.actief {
+  background: #ff9800;
+  font-weight: bold;
+}
+
+.actieve-speler {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #ff9800;
+  margin-bottom: 8px;
+}
 
 
 
