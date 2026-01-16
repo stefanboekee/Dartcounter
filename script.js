@@ -386,9 +386,9 @@ if (score === 67) {
         if (volgendeSpeler && volgendeSpeler.score <= 170) {
           const intro = playSound('your_score_is.mp3');
           if (intro) {
-            intro.onended = () => playSound(`${volgendeSpeler.score}.mp3`);
+            intro.onended = () => playSound(`${volgendeSpeler.score}.wav`);
           } else {
-            playSound(`${volgendeSpeler.score}.mp3`);
+            playSound(`${volgendeSpeler.score}.wav`);
           }
         }
       };
@@ -513,9 +513,9 @@ function verwerkTeamBeurt(tIndex) {
         if (volgendeTeam && volgendeTeam.score <= 170) {
           const intro = playSound('your_score_is.mp3');
           if (intro) {
-            intro.onended = () => playSound(`${volgendeTeam.score}.mp3`);
+            intro.onended = () => playSound(`${volgendeTeam.score}.wav`);
           } else {
-            playSound(`${volgendeTeam.score}.mp3`);
+            playSound(`${volgendeTeam.score}.wav`);
           }
         }
       };
