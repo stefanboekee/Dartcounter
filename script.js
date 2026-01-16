@@ -52,6 +52,17 @@ function toggleSpelControls(tonen) {
   if (herstelKnop) herstelKnop.style.display = display;
 }
 
+function toon67Gif(duration = 3000) {
+  const overlay = document.getElementById("gif67Overlay");
+  if (!overlay) return;
+
+  overlay.classList.add("visible");
+
+  setTimeout(() => {
+    overlay.classList.remove("visible");
+  }, duration);
+}
+
 /**
  * Toon of verberg de kleine "Nieuwe speler" knop (onder waar de statistieken stonden).
  */
@@ -270,6 +281,11 @@ function startSpel(aantal) {
 function verwerkBeurt(index) {
   const input = document.getElementById("invoer");
   const score = parseInt(input?.value || "0", 10);
+  // 🎯 67 gegooid → GIF (niet bij 67 over)
+if (score === 67) {
+  toon67Gif();
+}
+
 
   if (isNaN(score) || score < 0 || score > 180 || ongeldigeScores.includes(score)) {
     alert("Voer een geldige score in tussen 0 en 180.");
@@ -508,6 +524,7 @@ function verwerkTeamBeurt(tIndex) {
 
   renderTeamSpel();
 }
+
 
 /**
  * Voeg een nieuwe speler toe (alleen in single mode).
