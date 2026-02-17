@@ -202,14 +202,8 @@ h3 { text-align: center; font-size: 1rem; color: var(--text-dim); }
 }
 
 /* Backdrop for closing menu on outside click */
-#menuBackdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 1500;
-}
-
 /* ========== BODY OFFSET for top bar ========== */
-body > *:not(#topBar):not(#startLogoOverlay):not(#gif67Overlay):not(#menuBackdrop) {
+body > *:not(#topBar):not(#startLogoOverlay):not(#gif67Overlay) {
   margin-top: var(--topbar-h);
 }
 /* spelContainer is full-height flex, needs separate treatment */

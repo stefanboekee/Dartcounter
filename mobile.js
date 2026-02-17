@@ -68,22 +68,18 @@ window.toggleMenu = function() {
 
 window.openMenu = function() {
   _menuOpen = true;
-  const menu     = document.getElementById("dropdownMenu");
-  const btn      = document.getElementById("hamburgerBtn");
-  const backdrop = document.getElementById("menuBackdrop");
-  if (menu)     { menu.style.display = "block"; }
-  if (btn)      { btn.classList.add("open"); btn.setAttribute("aria-expanded","true"); }
-  if (backdrop) { backdrop.style.display = "block"; }
+  const menu = document.getElementById("dropdownMenu");
+  const btn  = document.getElementById("hamburgerBtn");
+  if (menu) { menu.style.display = "block"; }
+  if (btn)  { btn.classList.add("open"); btn.setAttribute("aria-expanded","true"); }
 };
 
 window.closeMenu = function() {
   _menuOpen = false;
-  const menu     = document.getElementById("dropdownMenu");
-  const btn      = document.getElementById("hamburgerBtn");
-  const backdrop = document.getElementById("menuBackdrop");
-  if (menu)     { menu.style.display = "none"; }
-  if (btn)      { btn.classList.remove("open"); btn.setAttribute("aria-expanded","false"); }
-  if (backdrop) { backdrop.style.display = "none"; }
+  const menu = document.getElementById("dropdownMenu");
+  const btn  = document.getElementById("hamburgerBtn");
+  if (menu) { menu.style.display = "none"; }
+  if (btn)  { btn.classList.remove("open"); btn.setAttribute("aria-expanded","false"); }
 };
 
 /**
@@ -448,8 +444,17 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   observer.observe(document.body, { childList: true, subtree: true });
 
+  // Close menu when clicking outside the hamburger wrap
+  document.addEventListener("click", e => {
+    if (!_menuOpen) return;
+    const wrap = document.getElementById("hamburgerWrap");
+    if (wrap && !wrap.contains(e.target)) {
+      window.closeMenu();
+    }
+  });
+
   // Close menu on Escape key
   document.addEventListener("keydown", e => {
-    if (e.key === "Escape" && _menuOpen) closeMenu();
+    if (e.key === "Escape" && _menuOpen) window.closeMenu();
   });
 });
