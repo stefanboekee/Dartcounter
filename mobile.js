@@ -164,15 +164,15 @@ window.renderSpel = function () {
 
   toggleSpelControls(true);
 
-  // Scorebord (other players)
+  // Scorebord (all players, active highlighted)
   const scorebord = document.getElementById("scorebord");
   scorebord.innerHTML = "";
   spelers.forEach((s, idx) => {
-    if (idx === beurt) return;
+    const isActief = idx === beurt;
     const card = document.createElement("div");
-    card.className = "sb-card";
+    card.className = "sb-card" + (isActief ? " sb-card-actief" : "");
     card.innerHTML = `
-      <div class="sb-naam">${s.naam}</div>
+      <div class="sb-naam">${isActief ? "🎯 " : ""}${s.naam}</div>
       <div class="sb-score">${s.score}</div>
       <div class="sb-legs">${s.legsGewonnen}/${legsTeWinnen} legs</div>
     `;
@@ -250,11 +250,11 @@ window.renderTeamSpel = function () {
   const scorebord = document.getElementById("scorebord");
   scorebord.innerHTML = "";
   teams.forEach((t, tIdx) => {
-    if (tIdx === beurt) return;
+    const isActief = tIdx === beurt;
     const card = document.createElement("div");
-    card.className = "sb-card";
+    card.className = "sb-card" + (isActief ? " sb-card-actief" : "");
     card.innerHTML = `
-      <div class="sb-naam">${t.naam}</div>
+      <div class="sb-naam">${isActief ? "🎯 " : ""}${t.naam}</div>
       <div class="sb-score">${t.score}</div>
       <div class="sb-legs">${t.legsGewonnen}/${legsTeWinnen} legs</div>
     `;

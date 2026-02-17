@@ -392,6 +392,14 @@ button:active { transform: scale(0.97); }
 .sb-score { font-size: 1.4rem; font-weight: 800; color: var(--text); }
 .sb-legs  { font-size: 0.7rem; color: var(--text-dim); }
 
+.sb-card-actief {
+  background: var(--active-bg);
+  border: 2px solid var(--active-border);
+  box-shadow: 0 0 8px rgba(56, 139, 253, 0.35);
+}
+.sb-card-actief .sb-naam  { color: var(--accent); font-weight: 700; }
+.sb-card-actief .sb-score { color: var(--accent); }
+
 /* ========== ACTIVE PLAYER PANEL ========== */
 #actiefPanel {
   flex: 1;
