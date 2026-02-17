@@ -58,32 +58,33 @@ function isMobile() {
 
 /* ====================================================
    HAMBURGER MENU
+   Overrides the stubs defined in script.js.
    ==================================================== */
 let _menuOpen = false;
 
-function toggleMenu() {
-  _menuOpen ? closeMenu() : openMenu();
-}
+window.toggleMenu = function() {
+  _menuOpen ? window.closeMenu() : window.openMenu();
+};
 
-function openMenu() {
+window.openMenu = function() {
   _menuOpen = true;
-  const menu    = document.getElementById("dropdownMenu");
-  const btn     = document.getElementById("hamburgerBtn");
+  const menu     = document.getElementById("dropdownMenu");
+  const btn      = document.getElementById("hamburgerBtn");
   const backdrop = document.getElementById("menuBackdrop");
-  if (menu)    { menu.style.display = "block"; }
-  if (btn)     { btn.classList.add("open"); btn.setAttribute("aria-expanded","true"); }
-  if (backdrop){ backdrop.style.display = "block"; }
-}
+  if (menu)     { menu.style.display = "block"; }
+  if (btn)      { btn.classList.add("open"); btn.setAttribute("aria-expanded","true"); }
+  if (backdrop) { backdrop.style.display = "block"; }
+};
 
-function closeMenu() {
+window.closeMenu = function() {
   _menuOpen = false;
-  const menu    = document.getElementById("dropdownMenu");
-  const btn     = document.getElementById("hamburgerBtn");
+  const menu     = document.getElementById("dropdownMenu");
+  const btn      = document.getElementById("hamburgerBtn");
   const backdrop = document.getElementById("menuBackdrop");
-  if (menu)    { menu.style.display = "none"; }
-  if (btn)     { btn.classList.remove("open"); btn.setAttribute("aria-expanded","false"); }
-  if (backdrop){ backdrop.style.display = "none"; }
-}
+  if (menu)     { menu.style.display = "none"; }
+  if (btn)      { btn.classList.remove("open"); btn.setAttribute("aria-expanded","false"); }
+  if (backdrop) { backdrop.style.display = "none"; }
+};
 
 /**
  * Show/hide game-specific menu items.
@@ -100,36 +101,39 @@ function _setGameMenuItems(active) {
   if (spelerBtn) spelerBtn.style.display = (active && !teamMode) ? "" : "none";
 }
 
-/* Menu action handlers */
-function menuToggleTheme() {
+/* ====================================================
+   Override the stub menu functions defined in script.js
+   with full implementations that also close the menu.
+   ==================================================== */
+window.menuToggleTheme = function() {
   toggleTheme();
   closeMenu();
-}
+};
 
-function menuNieuweSpeler() {
+window.menuNieuweSpeler = function() {
   closeMenu();
   nieuweSpelerToevoegen();
-}
+};
 
-function menuHerstel() {
+window.menuHerstel = function() {
   closeMenu();
   herstelLaatsteScore();
-}
+};
 
-function menuStop() {
+window.menuStop = function() {
   closeMenu();
   stopSpel();
-}
+};
 
 /* ====================================================
    THEME TOGGLE
-   Shared between mobile and desktop.
+   Overrides the stub in script.js.
    ==================================================== */
-function toggleTheme() {
+window.toggleTheme = function() {
   const isLight = document.body.classList.contains("light-mode");
   _applyTheme(isLight ? "dark" : "light");
-  try { localStorage.setItem("dartTheme", isLight ? "dark" : "light"); } catch(e){}
-}
+  try { localStorage.setItem("dartTheme", isLight ? "dark" : "light"); } catch(e) {}
+};
 
 function _applyTheme(theme) {
   const icon = document.getElementById("themeIcon");

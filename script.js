@@ -37,6 +37,38 @@ const ongeldigeScores = [179, 178, 176, 175, 173, 172, 169, 166, 163]; // scores
 
 
 /* ===========================
+   1b) Thema & menu helpers
+   Stubs — mobile.js overschrijft deze na het laden.
+   =========================== */
+
+/**
+ * Wissel tussen licht en donker thema.
+ * Wordt overschreven door mobile.js; deze versie dekt het geval
+ * dat mobile.js nog niet geladen is.
+ */
+function toggleTheme() {
+  const isLight = document.body.classList.contains("light-mode");
+  const next = isLight ? "dark" : "light";
+  document.body.classList.toggle("light-mode", next === "light");
+  const icon = document.getElementById("themeIcon");
+  if (icon) icon.textContent = next === "light" ? "☀️" : "🌙";
+  try { localStorage.setItem("dartTheme", next); } catch(e) {}
+}
+
+/**
+ * Stubs voor hamburger-menu functies (gedefinieerd in mobile.js).
+ * Hier gedefinieerd zodat inline onclick-handlers niet falen
+ * als mobile.js (nog) niet geladen is.
+ */
+function toggleMenu()        { /* overschreven door mobile.js */ }
+function closeMenu()         { /* overschreven door mobile.js */ }
+function openMenu()          { /* overschreven door mobile.js */ }
+function menuToggleTheme()   { toggleTheme(); }
+function menuNieuweSpeler()  { nieuweSpelerToevoegen(); }
+function menuHerstel()       { herstelLaatsteScore(); }
+function menuStop()          { stopSpel(); }
+
+/* ===========================
    2) UI helpers (tonen / verbergen, geluid)
    =========================== */
 
@@ -528,10 +560,12 @@ function verwerkTeamBeurt(tIndex) {
 
 /**
  * Voeg een nieuwe speler toe (alleen in single mode).
- * De gebruiker krijgt een prompt en het spel wordt herstart met nieuwe speler toegevoegd.
+ * Vraagt bevestiging en naam via prompts.
  */
 function nieuweSpelerToevoegen() {
   if (teamMode) return;
+
+  if (!confirm("Weet je zeker dat je een nieuwe speler wilt toevoegen?")) return;
 
   const naam = prompt("Voer de naam van de nieuwe speler in:");
   if (!naam || !naam.trim()) return;
@@ -642,14 +676,58 @@ renderSpel();
 }
 
 /**
- * Stop het spel en refresh de pagina (met confirm).
+ * Stop het spel en keer terug naar het startscherm (met confirm).
+ * Geen page reload — reset alle state en toon de moduskeuze.
  */
 function stopSpel() {
-  if (confirm("Weet je zeker dat je het spel wilt stoppen?")) {
-    toggleSpelControls(false);
-    eersteLeg = true;
-    location.reload();
+  if (!confirm("Weet je zeker dat je het spel wilt stoppen en terug wilt naar het startscherm?")) return;
+
+  // Reset alle spelstate
+  spelers = [];
+  teams = [];
+  teamMode = false;
+  beurt = 0;
+  teamBeurtIndex = 0;
+  eersteLeg = true;
+  startScore = 501;
+  legsTeWinnen = 3;
+  sessieGeschiedenis = [];
+  herstelGeschiedenis = [];
+  startVolgordeIndex = 0;
+
+  // Stop audio
+  if (huidigeAudio) {
+    try { huidigeAudio.pause(); huidigeAudio.currentTime = 0; } catch(e) {}
+    huidigeAudio = null;
   }
+
+  // Verberg alle spelschermen
+  toggleSpelControls(false);
+  toggleAddPlayerSmallBtn(false);
+
+  const ids = ["spel","spelContainer","eindscherm","setup","teamSetup","namenSetup","controls"];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = "none";
+  });
+
+  // Verwijder dynamisch aangemaakte scoreKeuze div indien aanwezig
+  document.getElementById("scoreKeuze")?.remove();
+
+  // Leeg dynamische containers
+  const namenSetup = document.getElementById("namenSetup");
+  if (namenSetup) namenSetup.innerHTML = "";
+  const teamSetup = document.getElementById("teamSetup");
+  if (teamSetup) teamSetup.innerHTML = "";
+  const eindscherm = document.getElementById("eindscherm");
+  if (eindscherm) eindscherm.innerHTML = "";
+
+  // Toon startscherm
+  const keuze = document.getElementById("keuzeMode");
+  if (keuze) keuze.style.display = "block";
+
+  // Laat menu-items verdwijnen (via mobile.js hook als beschikbaar)
+  if (typeof _setGameMenuItems === "function") _setGameMenuItems(false);
 }
 
 /* ===========================
@@ -663,6 +741,8 @@ function stopSpel() {
  * Render het spel voor single mode (spelerskaarten).
  */
 function renderSpel() {
+  // Hook voor mobile.js: toon game-menu-items
+  if (typeof _setGameMenuItems === "function") _setGameMenuItems(true);
   toggleSpelControls(true);
   toggleAddPlayerSmallBtn(!teamMode);
 
@@ -735,6 +815,8 @@ function renderSpel() {
  * Render het spel voor team mode.
  */
 function renderTeamSpel() {
+  // Hook voor mobile.js: toon game-menu-items
+  if (typeof _setGameMenuItems === "function") _setGameMenuItems(true);
   toggleSpelControls(true);
   toggleAddPlayerSmallBtn(false); // geen nieuwe speler knop in teammode
 
@@ -808,6 +890,8 @@ function renderTeamSpel() {
  * 'winnaar' is het winnende speler- of team-object. 'deelnemers' is array van alle deelnemers.
  */
 function toonEindscherm(winnaar, deelnemers) {
+  // Hook voor mobile.js: verberg game-menu-items op eindscherm
+  if (typeof _setGameMenuItems === "function") _setGameMenuItems(false);
   toggleSpelControls(false);
   document.getElementById("spel").style.display = "none";
 
