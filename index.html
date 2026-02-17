@@ -19,13 +19,37 @@
   <img src="67.gif" alt="67!" />
 </div>
 
-<!-- Fixed top-right: logo + theme toggle -->
-<div class="logo-container">
-  <button id="themeToggle" onclick="toggleTheme()" title="Licht/Donker">🌙</button>
-  <img src="logo.png" alt="Dartcounter Logo" class="logo">
+<!-- ===== TOP BAR ===== -->
+<div id="topBar">
+  <div class="logo-container">
+    <img src="logo.png" alt="Dartcounter Logo" class="logo">
+  </div>
+
+  <h1>Dartcounter V1.5</h1>
+
+  <div id="hamburgerWrap">
+    <button id="hamburgerBtn" onclick="toggleMenu()" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <nav id="dropdownMenu" class="dropdown-menu" style="display:none;">
+      <button class="menu-item" onclick="menuToggleTheme()">
+        <span id="themeIcon">🌙</span> Licht / Donker
+      </button>
+      <button class="menu-item" id="menuSpelerBtn" onclick="menuNieuweSpeler()" style="display:none;">
+        ➕ Speler toevoegen
+      </button>
+      <button class="menu-item" id="menuHerstelBtn" onclick="menuHerstel()" style="display:none;">
+        ↩ Herstel laatste
+      </button>
+      <hr class="menu-divider">
+      <button class="menu-item menu-item-danger" id="menuStopBtn" onclick="menuStop()" style="display:none;">
+        ■ Stop / Exit
+      </button>
+    </nav>
+  </div>
 </div>
 
-<h1>Dartcounter V1.5</h1>
+<div id="menuBackdrop" onclick="closeMenu()" style="display:none;"></div>
 
 <!-- ===== MODE KEUZE ===== -->
 <div id="keuzeMode" class="screen-section">
@@ -42,7 +66,7 @@
   </div>
 </div>
 
-<!-- ===== SETUP (aantal spelers / legs) ===== -->
+<!-- ===== SETUP ===== -->
 <div id="setup" style="display: none;" class="screen-section">
   <h2>Instellingen</h2>
   <div class="setup-row">
@@ -62,25 +86,19 @@
 <!-- ===== NAMEN SETUP ===== -->
 <div id="namenSetup" class="screen-section"></div>
 
-<!-- ===== Desktop spel div (script.js writes here; hidden on mobile) ===== -->
+<!-- Desktop spel div -->
 <div id="spel" class="flex-container" style="display:none;"></div>
 
-<!-- Desktop control buttons (script.js toggles these; hidden on mobile via CSS) -->
+<!-- Desktop control buttons (kept for script.js compatibility) -->
 <div id="controls" style="display:none; text-align:center;">
   <button id="stopKnop" onclick="stopSpel()" style="display:none;">Stop spel</button>
   <button id="herstelKnop" onclick="herstelLaatsteScore()" style="display:none;">Herstel laatste invoer</button>
 </div>
 
-<!-- ===== SPEL CONTAINER ===== -->
+<!-- ===== MOBILE SPEL CONTAINER ===== -->
 <div id="spelContainer" style="display: none;">
-
-  <!-- Scorebord: andere spelers (bovenaan, scrollbaar) -->
   <div id="scorebord"></div>
-
-  <!-- Actieve speler kaart -->
   <div id="actiefPanel"></div>
-
-  <!-- Vaste invoerbalk onderaan -->
   <div id="invoerBalk">
     <div id="scoreDisplay">
       <span id="scoreDisplayTekst">—</span>
@@ -104,17 +122,13 @@
       <button id="stopKnopMobiel" onclick="stopSpel()" class="ctrl-btn ctrl-stop">■ Stop</button>
     </div>
   </div>
-
 </div>
 
 <!-- ===== EINDSCHERM ===== -->
 <div id="eindscherm" style="display: none;" class="screen-section"></div>
 
-<!-- ===== ADD PLAYER BTN (draggable) ===== -->
-<div id="addPlayerSmallBtn" style="display: none;" class="add-player-btn">
-  <span class="drag-grip">⠿</span>
-  <span onclick="nieuweSpelerToevoegen()">➕ Nieuwe speler</span>
-</div>
+<!-- Kept for JS compatibility, hidden -->
+<div id="addPlayerSmallBtn" style="display:none;"></div>
 
 <script src="script.js"></script>
 <script src="mobile.js"></script>
