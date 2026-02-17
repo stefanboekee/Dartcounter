@@ -91,7 +91,7 @@ window.renderSpel = function () {
 
   // Add-player button
   const addBtn = document.getElementById("addPlayerSmallBtn");
-  if (addBtn) addBtn.style.display = "inline-block";
+  if (addBtn) addBtn.style.display = "flex";
 
   // ---- Scorebord (other players) ----
   const scorebord = document.getElementById("scorebord");
@@ -357,11 +357,11 @@ window.toggleSpelControls = function (tonen) {
 const _origToggleAdd = window.toggleAddPlayerSmallBtn;
 window.toggleAddPlayerSmallBtn = function(tonen) {
   _origToggleAdd.call(this, tonen);
-  // Also update our fixed mobile button
+  // Also update our fixed mobile button (it's now a div, needs display:flex)
   const btn = document.getElementById("addPlayerSmallBtn");
   if (!btn) return;
   if (isMobile()) {
-    btn.style.display = tonen ? "inline-block" : "none";
+    btn.style.display = tonen ? "flex" : "none";
   }
 };
 
@@ -388,9 +388,133 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
   observer.observe(document.body, { childList: true, subtree: true });
+
+  // Apply saved theme
+  _applyTheme(localStorage.getItem("dartTheme") || "dark");
+
+  // Init draggable add-player button
+  _initDraggableBtn();
 });
 
 /* ====================================================
    Keyboard: Enter key on desktop invoer still works
    (script.js already handles this, nothing to override)
    ==================================================== */
+
+/* ====================================================
+   THEME TOGGLE
+   ==================================================== */
+function toggleTheme() {
+  const isLight = document.body.classList.contains("light-mode");
+  const next = isLight ? "dark" : "light";
+  _applyTheme(next);
+  localStorage.setItem("dartTheme", next);
+}
+
+function _applyTheme(theme) {
+  const btn = document.getElementById("themeToggle");
+  if (theme === "light") {
+    document.body.classList.add("light-mode");
+    if (btn) btn.textContent = "🌙";
+  } else {
+    document.body.classList.remove("light-mode");
+    if (btn) btn.textContent = "☀️";
+  }
+}
+
+/* ====================================================
+   DRAGGABLE ADD-PLAYER BUTTON
+   Works with both touch and mouse.
+   Saves position to localStorage so it persists.
+   ==================================================== */
+function _initDraggableBtn() {
+  const btn = document.getElementById("addPlayerSmallBtn");
+  if (!btn) return;
+
+  // Restore saved position
+  const saved = _loadBtnPos();
+  if (saved) {
+    btn.style.left   = saved.left;
+    btn.style.top    = saved.top;
+    btn.style.right  = "auto";
+    btn.style.bottom = "auto";
+  }
+
+  let dragging = false;
+  let startX, startY, origLeft, origTop;
+
+  // ---- Touch ----
+  btn.addEventListener("touchstart", (e) => {
+    // Only drag via the grip, or the outer div directly (not the text span)
+    if (e.target.classList.contains("drag-grip") || e.target === btn) {
+      dragging = true;
+      const touch = e.touches[0];
+      const rect = btn.getBoundingClientRect();
+      startX = touch.clientX - rect.left;
+      startY = touch.clientY - rect.top;
+      btn.style.transition = "none";
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  btn.addEventListener("touchmove", (e) => {
+    if (!dragging) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    _moveTo(btn, touch.clientX - startX, touch.clientY - startY);
+  }, { passive: false });
+
+  btn.addEventListener("touchend", () => {
+    if (!dragging) return;
+    dragging = false;
+    _clampAndSave(btn);
+  });
+
+  // ---- Mouse ----
+  btn.addEventListener("mousedown", (e) => {
+    if (e.target.classList.contains("drag-grip") || e.target === btn) {
+      dragging = true;
+      const rect = btn.getBoundingClientRect();
+      startX = e.clientX - rect.left;
+      startY = e.clientY - rect.top;
+      btn.style.transition = "none";
+      e.preventDefault();
+    }
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    if (!dragging) return;
+    _moveTo(btn, e.clientX - startX, e.clientY - startY);
+  });
+
+  document.addEventListener("mouseup", () => {
+    if (!dragging) return;
+    dragging = false;
+    _clampAndSave(btn);
+  });
+}
+
+function _moveTo(el, x, y) {
+  el.style.left   = x + "px";
+  el.style.top    = y + "px";
+  el.style.right  = "auto";
+  el.style.bottom = "auto";
+}
+
+function _clampAndSave(el) {
+  const rect = el.getBoundingClientRect();
+  const maxX = window.innerWidth  - rect.width  - 4;
+  const maxY = window.innerHeight - rect.height - 4;
+  const clampedLeft = Math.max(4, Math.min(rect.left, maxX));
+  const clampedTop  = Math.max(4, Math.min(rect.top,  maxY));
+  el.style.left = clampedLeft + "px";
+  el.style.top  = clampedTop  + "px";
+  localStorage.setItem("dartAddBtnPos", JSON.stringify({ left: clampedLeft + "px", top: clampedTop + "px" }));
+}
+
+function _loadBtnPos() {
+  try {
+    const raw = localStorage.getItem("dartAddBtnPos");
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}

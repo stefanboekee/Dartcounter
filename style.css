@@ -5,25 +5,48 @@
 /* ---- Reset & Base ---- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ---- Dark mode (default) ---- */
 :root {
-  --blue:       #007bff;
-  --blue-dark:  #0056b3;
-  --green:      #28a745;
-  --green-dark: #1e7e34;
-  --red:        #dc3545;
-  --gold:       #ffd700;
-  --bg:         #0d1117;
-  --surface:    #161b22;
-  --surface2:   #21262d;
-  --border:     #30363d;
-  --text:       #e6edf3;
-  --text-dim:   #8b949e;
-  --accent:     #58a6ff;
-  --active-bg:  #1c2d40;
+  --blue:          #007bff;
+  --blue-dark:     #0056b3;
+  --green:         #28a745;
+  --green-dark:    #1e7e34;
+  --red:           #dc3545;
+  --gold:          #ffd700;
+  --bg:            #0d1117;
+  --surface:       #161b22;
+  --surface2:      #21262d;
+  --border:        #30363d;
+  --text:          #e6edf3;
+  --text-dim:      #8b949e;
+  --accent:        #58a6ff;
+  --active-bg:     #1c2d40;
   --active-border: #388bfd;
-  --radius:     12px;
-  --radius-sm:  8px;
-  --invoer-height: 280px; /* height of the fixed bottom bar */
+  --radius:        12px;
+  --radius-sm:     8px;
+  --invoer-height: 280px;
+  --np-bg:         #21262d;
+  --np-border:     #30363d;
+  --sb-bg:         #21262d;
+  --sb-border:     #30363d;
+}
+
+/* ---- Light mode ---- */
+body.light-mode {
+  --bg:            #f4f6f9;
+  --surface:       #ffffff;
+  --surface2:      #edf0f5;
+  --border:        #d0d7de;
+  --text:          #1a1f27;
+  --text-dim:      #57606a;
+  --accent:        #0969da;
+  --active-bg:     #dbeafe;
+  --active-border: #2563eb;
+  --np-bg:         #edf0f5;
+  --np-border:     #c8cdd4;
+  --sb-bg:         #edf0f5;
+  --sb-border:     #d0d7de;
+  --gold:          #b8860b;
 }
 
 html, body {
@@ -34,6 +57,7 @@ html, body {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   font-size: 16px;
   -webkit-tap-highlight-color: transparent;
+  transition: background 0.25s ease, color 0.25s ease;
 }
 
 h1 {
@@ -48,14 +72,34 @@ h1 {
 h2 { text-align: center; font-size: 1.15rem; color: var(--text); margin-bottom: 12px; }
 h3 { text-align: center; font-size: 1rem; color: var(--text-dim); }
 
-/* ---- Logo ---- */
+/* ---- Logo + Theme Toggle ---- */
 .logo-container {
   position: fixed;
   top: 6px;
   right: 6px;
   z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .logo { width: 46px; height: auto; border-radius: 6px; }
+
+#themeToggle {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s, transform 0.15s;
+  color: var(--text);
+}
+#themeToggle:active { transform: scale(0.9); }
 
 /* ---- Screens ---- */
 .screen-section {
@@ -377,8 +421,8 @@ button:active { transform: scale(0.97); }
   padding: 14px 6px;
   font-size: 1.5rem;
   font-weight: 700;
-  background: var(--surface2);
-  border: 1px solid var(--border);
+  background: var(--np-bg);
+  border: 1px solid var(--np-border);
   border-radius: var(--radius-sm);
   color: var(--text);
   text-align: center;
@@ -392,14 +436,26 @@ button:active { transform: scale(0.97); }
   border-color: #7a3535;
   color: #ff6b6b;
 }
+body.light-mode .np-clear {
+  background: #fde8e8;
+  border-color: #f5a5a5;
+  color: #c0392b;
+}
 .np-clear:active { background: #5c2a2a; }
+body.light-mode .np-clear:active { background: #f5c5c5; }
 
 .np-confirm {
   background: #1a3d1a;
   border-color: #2d6b2d;
   color: #6bff6b;
 }
+body.light-mode .np-confirm {
+  background: #e6f9e6;
+  border-color: #86c986;
+  color: #1a6b1a;
+}
 .np-confirm:active { background: #245924; }
+body.light-mode .np-confirm:active { background: #c8eec8; }
 
 /* Controls row */
 #spelControls {
@@ -492,11 +548,11 @@ button:active { transform: scale(0.97); }
 .btn-opnieuw { background: var(--blue); }
 .btn-speler  { background: var(--green); }
 
-/* ---- Add Player ---- */
+/* ---- Add Player (draggable) ---- */
 .add-player-btn {
   display: none;
   position: fixed;
-  bottom: 300px; /* above invoer balk */
+  bottom: 300px;
   right: 12px;
   background: var(--green);
   color: #fff;
@@ -504,8 +560,24 @@ button:active { transform: scale(0.97); }
   border-radius: 20px;
   font-size: 0.9rem;
   font-weight: 600;
-  z-index: 100;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  z-index: 200;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.add-player-btn:active { cursor: grabbing; }
+.drag-grip {
+  font-size: 1.1rem;
+  opacity: 0.7;
+  letter-spacing: -1px;
+  cursor: grab;
+}
+.add-player-btn span:last-child {
+  cursor: pointer;
 }
 
 /* ---- Overlays ---- */

@@ -19,8 +19,9 @@
   <img src="67.gif" alt="67!" />
 </div>
 
-<!-- Fixed logo top-right -->
+<!-- Fixed top-right: logo + theme toggle -->
 <div class="logo-container">
+  <button id="themeToggle" onclick="toggleTheme()" title="Licht/Donker">🌙</button>
   <img src="logo.png" alt="Dartcounter Logo" class="logo">
 </div>
 
@@ -109,8 +110,11 @@
 <!-- ===== EINDSCHERM ===== -->
 <div id="eindscherm" style="display: none;" class="screen-section"></div>
 
-<!-- ===== ADD PLAYER BTN ===== -->
-<button id="addPlayerSmallBtn" onclick="nieuweSpelerToevoegen()" style="display: none;" class="add-player-btn">➕ Nieuwe speler</button>
+<!-- ===== ADD PLAYER BTN (draggable) ===== -->
+<div id="addPlayerSmallBtn" style="display: none;" class="add-player-btn">
+  <span class="drag-grip">⠿</span>
+  <span onclick="nieuweSpelerToevoegen()">➕ Nieuwe speler</span>
+</div>
 
 <script src="script.js"></script>
 <script src="mobile.js"></script>
