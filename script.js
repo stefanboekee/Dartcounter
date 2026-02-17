@@ -164,7 +164,8 @@ function selecteerStartScore(mode, score) {
 
   if (mode === 'teams') {
     document.getElementById("setup").style.display = 'none';
-    document.getElementById("teamSetup").innerHTML = `
+    const teamSetupEl = document.getElementById("teamSetup");
+    teamSetupEl.innerHTML = `
       <label for="aantalTeams">Aantal teams:</label>
       <input type="number" id="aantalTeams" min="2" max="4" value="3" class="compact-input">
       <label for="aantalLegs">Aantal legs te winnen:</label>
@@ -172,7 +173,7 @@ function selecteerStartScore(mode, score) {
       </br>    
       <button onclick="setupTeams()">Volgende</button>
     `;
-    document.getElementById("teamSetup").style.display = 'block';
+    teamSetupEl.style.display = 'block';
   } else {
     document.getElementById("setup").style.display = 'block';
   }
@@ -236,7 +237,10 @@ function setupNamen() {
   const aantal = parseInt(document.getElementById("aantalSpelers").value);
   legsTeWinnen = parseInt(document.getElementById("aantalLegs").value);
 
+  // Verberg setup, toon namenSetup (ook na een stop/herstart)
+  document.getElementById("setup").style.display = "none";
   const container = document.getElementById("namenSetup");
+  container.style.display = "block";
   container.innerHTML = "<h2>Voer spelersnamen in</h2>";
 
   const namenOpties = [
@@ -705,7 +709,8 @@ function stopSpel() {
   toggleSpelControls(false);
   toggleAddPlayerSmallBtn(false);
 
-  const ids = ["spel","spelContainer","eindscherm","setup","teamSetup","namenSetup","controls"];
+  // Verberg spelschermen (niet namenSetup/teamSetup — die worden zichtbaar via setupNamen/selecteerStartScore)
+  const ids = ["spel","spelContainer","eindscherm","setup","controls"];
   ids.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = "none";
@@ -714,13 +719,13 @@ function stopSpel() {
   // Verwijder dynamisch aangemaakte scoreKeuze div indien aanwezig
   document.getElementById("scoreKeuze")?.remove();
 
-  // Leeg dynamische containers
+  // Leeg en verberg dynamische containers; display wordt gereset zodat ze opnieuw getoond kunnen worden
   const namenSetup = document.getElementById("namenSetup");
-  if (namenSetup) namenSetup.innerHTML = "";
+  if (namenSetup) { namenSetup.innerHTML = ""; namenSetup.style.display = ""; }
   const teamSetup = document.getElementById("teamSetup");
-  if (teamSetup) teamSetup.innerHTML = "";
+  if (teamSetup) { teamSetup.innerHTML = ""; teamSetup.style.display = "none"; }
   const eindscherm = document.getElementById("eindscherm");
-  if (eindscherm) eindscherm.innerHTML = "";
+  if (eindscherm) { eindscherm.innerHTML = ""; eindscherm.style.display = "none"; }
 
   // Toon startscherm
   const keuze = document.getElementById("keuzeMode");
