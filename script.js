@@ -171,7 +171,7 @@ function selecteerStartScore(mode, score) {
       <label for="aantalLegs">Aantal legs te winnen:</label>
       <input type="number" id="aantalLegs" min="1" max="10" value="2" class="compact-input">
       </br>    
-      <button onclick="setupTeams()">Volgende</button>
+      <button class="primary-btn" onclick="setupTeams()">Volgende</button>
     `;
     teamSetupEl.style.display = 'block';
   } else {
@@ -268,7 +268,7 @@ function setupNamen() {
   }
 
   container.innerHTML += `
-    <button id="bevestigNamen" onclick="startSpel(${aantal})">Start spel</button>
+    <button id="bevestigNamen" class="primary-btn" onclick="startSpel(${aantal})">Start spel</button>
   `;
 }
 
@@ -745,6 +745,19 @@ function stopSpel() {
 /**
  * Render het spel voor single mode (spelerskaarten).
  */
+/**
+ * Quick-enter a score (desktop): fills input and confirms the turn.
+ */
+function snelScoreInvoeren(score) {
+  const input = document.getElementById('invoer');
+  if (input) input.value = score;
+  if (teamMode) {
+    verwerkTeamBeurt(beurt);
+  } else {
+    verwerkBeurt(beurt);
+  }
+}
+
 function renderSpel() {
   // Hook voor mobile.js: toon game-menu-items
   if (typeof _setGameMenuItems === "function") _setGameMenuItems(true);
@@ -776,7 +789,12 @@ function renderSpel() {
       ${isBeurt ? `
         <label for="invoer">Score invoeren:</label>
         <input id="invoer" type="number" min="0" max="180">
-        <button onclick="verwerkBeurt(${index})">Bevestig beurt</button>
+        <button class="primary-btn" onclick="verwerkBeurt(${index})">Bevestig beurt</button>
+        <div class="quick-score-group">
+          <button class="quick-score-btn" onclick="snelScoreInvoeren(11)">11</button>
+          <button class="quick-score-btn" onclick="snelScoreInvoeren(26)">26</button>
+          <button class="quick-score-btn" onclick="snelScoreInvoeren(67)">67</button>
+        </div>
       ` : ''}
     `;
     container.appendChild(div);
@@ -847,7 +865,12 @@ function renderTeamSpel() {
       ${isBeurt ? `
         <label for="invoer">Score invoeren:</label>
         <input id="invoer" type="number" min="0" max="180">
-        <button onclick="verwerkTeamBeurt(${tIndex})">Bevestig beurt</button>
+        <button class="primary-btn" onclick="verwerkTeamBeurt(${tIndex})">Bevestig beurt</button>
+        <div class="quick-score-group">
+          <button class="quick-score-btn" onclick="snelScoreInvoeren(11)">11</button>
+          <button class="quick-score-btn" onclick="snelScoreInvoeren(26)">26</button>
+          <button class="quick-score-btn quick-score-btn-gold" onclick="snelScoreInvoeren(67)">67</button>
+        </div>
       ` : ''}
     `;
     container.appendChild(div);

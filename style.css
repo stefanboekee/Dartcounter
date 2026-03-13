@@ -340,6 +340,30 @@ button:active { transform: scale(0.97); }
 }
 .primary-btn:hover { background: var(--blue-dark); }
 
+/* ========== QUICK SCORE BUTTON (e.g. "26") ========== */
+.quick-score-group {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.quick-score-btn {
+  flex: 1;
+  padding: 10px 0;
+  font-size: 1rem;
+  font-weight: 800;
+  background: var(--green, #2ea043);
+  color: #fff;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s, transform 0.1s;
+}
+.quick-score-btn:hover  { background: var(--green-dark, #238636); }
+.quick-score-btn:active { transform: scale(0.96); }
+.quick-score-btn-gold { background: var(--gold, #d4a017); }
+.quick-score-btn-gold:hover { background: #b8860b; }
+
 /* ========== NAMEN SETUP ========== */
 .naamveld-select, .naamveld-input, .naamveld {
   width: 100%;
@@ -362,6 +386,16 @@ button:active { transform: scale(0.97); }
   height: 100vh;
   overflow: hidden;
   /* padding-top set above to offset topbar */
+}
+
+/* Scrollable upper area: scorebord + actiefPanel scroll together */
+#spelScrollArea {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ========== SCOREBORD (other players strip) ========== */
@@ -403,9 +437,7 @@ button:active { transform: scale(0.97); }
 /* ========== ACTIVE PLAYER PANEL ========== */
 #actiefPanel {
   flex: 1;
-  overflow-y: auto;
   padding: 10px 12px 6px;
-  -webkit-overflow-scrolling: touch;
 }
 
 .actief-kaart {
