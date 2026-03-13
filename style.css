@@ -385,7 +385,6 @@ button:active { transform: scale(0.97); }
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
-  /* padding-top set above to offset topbar */
 }
 
 /* Scrollable upper area: scorebord + actiefPanel scroll together */
@@ -396,6 +395,7 @@ button:active { transform: scale(0.97); }
   -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 /* ========== SCOREBORD (other players strip) ========== */
@@ -404,8 +404,8 @@ button:active { transform: scale(0.97); }
   display: flex;
   flex-direction: row;
   overflow-x: auto;
-  gap: 8px;
-  padding: 8px 10px 4px;
+  gap: 6px;
+  padding: 5px 8px 4px;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
   -webkit-overflow-scrolling: touch;
@@ -418,13 +418,13 @@ button:active { transform: scale(0.97); }
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 6px 12px;
+  padding: 4px 10px;
   text-align: center;
-  min-width: 80px;
+  min-width: 70px;
 }
-.sb-naam  { font-size: 0.75rem; color: var(--text-dim); white-space: nowrap; }
-.sb-score { font-size: 1.4rem; font-weight: 800; color: var(--text); }
-.sb-legs  { font-size: 0.7rem; color: var(--text-dim); }
+.sb-naam  { font-size: 0.7rem; color: var(--text-dim); white-space: nowrap; }
+.sb-score { font-size: 1.2rem; font-weight: 800; color: var(--text); }
+.sb-legs  { font-size: 0.65rem; color: var(--text-dim); }
 
 .sb-card-actief {
   background: var(--active-bg);
@@ -437,41 +437,41 @@ button:active { transform: scale(0.97); }
 /* ========== ACTIVE PLAYER PANEL ========== */
 #actiefPanel {
   flex: 1;
-  padding: 10px 12px 6px;
+  padding: 6px 10px 4px;
 }
 
 .actief-kaart {
   background: var(--active-bg);
   border: 2px solid var(--active-border);
   border-radius: var(--radius);
-  padding: 14px 16px;
+  padding: 8px 12px;
   text-align: center;
   box-shadow: 0 0 20px rgba(56, 139, 253, 0.18);
 }
-.actief-naam     { font-size: 1.2rem; font-weight: 700; color: var(--accent); margin-bottom: 2px; }
-.actief-score    { font-size: 5rem; font-weight: 900; line-height: 1; color: var(--text); margin: 4px 0 6px; letter-spacing: -2px; }
-.actief-checkout { font-size: 0.9rem; color: var(--gold); font-weight: 600; margin-bottom: 8px; min-height: 1.2em; }
+.actief-naam     { font-size: 1rem; font-weight: 700; color: var(--accent); margin-bottom: 1px; }
+.actief-score    { font-size: 3.2rem; font-weight: 900; line-height: 1; color: var(--text); margin: 2px 0 4px; letter-spacing: -2px; }
+.actief-checkout { font-size: 0.82rem; color: var(--gold); font-weight: 600; margin-bottom: 4px; min-height: 1em; }
 
 .actief-stats {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  margin-top: 8px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-top: 5px;
 }
 .stat-chip {
   background: var(--surface2);
   border-radius: var(--radius-sm);
-  padding: 6px 8px;
-  font-size: 0.78rem;
+  padding: 4px 6px;
+  font-size: 0.7rem;
   color: var(--text-dim);
 }
-.stat-chip strong { display: block; font-size: 1rem; color: var(--text); }
-.actief-geschiedenis { margin-top: 8px; font-size: 0.8rem; color: var(--text-dim); text-align: left; }
+.stat-chip strong { display: block; font-size: 0.88rem; color: var(--text); }
+.actief-geschiedenis { margin-top: 5px; font-size: 0.72rem; color: var(--text-dim); text-align: left; }
 
 /* Team specifics */
-.team-naam-sub { font-size: 0.85rem; color: var(--text-dim); }
-.team-spelers-strip { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin: 6px 0; }
-.team-speler-chip { padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border); }
+.team-naam-sub { font-size: 0.8rem; color: var(--text-dim); }
+.team-spelers-strip { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin: 4px 0; }
+.team-speler-chip { padding: 3px 8px; border-radius: 20px; font-size: 0.75rem; background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border); }
 .team-speler-chip.actief-chip { background: #ff9800; color: #000; font-weight: 700; border-color: #ff9800; }
 
 /* ========== FIXED INVOER BALK ========== */
@@ -479,18 +479,18 @@ button:active { transform: scale(0.97); }
   flex-shrink: 0;
   background: var(--surface);
   border-top: 1px solid var(--border);
-  padding: 8px 10px calc(10px + env(safe-area-inset-bottom));
+  padding: 5px 8px calc(6px + env(safe-area-inset-bottom));
 }
 
-#scoreDisplay { text-align: center; margin-bottom: 6px; }
+#scoreDisplay { text-align: center; margin-bottom: 4px; }
 #scoreDisplayTekst {
   display: inline-block;
-  min-width: 80px;
-  padding: 4px 18px;
+  min-width: 70px;
+  padding: 2px 14px;
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: var(--text);
   letter-spacing: 2px;
@@ -499,12 +499,12 @@ button:active { transform: scale(0.97); }
 #numpad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  gap: 5px;
 }
 
 .np-btn {
-  padding: 14px 6px;
-  font-size: 1.5rem;
+  padding: 10px 6px;
+  font-size: 1.3rem;
   font-weight: 700;
   background: var(--np-bg);
   border: 1px solid var(--np-border);
@@ -526,9 +526,9 @@ body.light-mode .np-clear:active { background:#f5c5c5; }
 body.light-mode .np-confirm { background:#e6f9e6; border-color:#86c986; color:#1a6b1a; }
 body.light-mode .np-confirm:active { background:#c8eec8; }
 
-#spelControls { display: flex; gap: 8px; margin-top: 7px; }
+#spelControls { display: flex; gap: 6px; margin-top: 5px; }
 .ctrl-btn {
-  flex: 1; padding: 10px; font-size: 0.9rem; font-weight: 600;
+  flex: 1; padding: 8px; font-size: 0.85rem; font-weight: 600;
   background: var(--surface2); border: 1px solid var(--border);
   border-radius: var(--radius-sm); color: var(--text-dim);
 }
