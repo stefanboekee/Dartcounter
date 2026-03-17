@@ -76,7 +76,10 @@
     <label for="aantalLegs">Legs te winnen:</label>
     <input type="number" id="aantalLegs" min="1" max="10" value="2" class="compact-input">
   </div>
-  <button class="primary-btn" onclick="setupNamen()">Volgende →</button>
+  <div class="setup-btn-row">
+    <button class="back-btn" onclick="terug_naarScore('single')">← Terug</button>
+    <button class="primary-btn" onclick="setupNamen()">Volgende →</button>
+  </div>
 </div>
 
 <!-- ===== TEAM SETUP ===== -->

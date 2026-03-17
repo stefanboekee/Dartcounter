@@ -148,11 +148,24 @@ function selecteerModus(mode) {
   scoreKeuze.className = "scoreselectie";
   scoreKeuze.innerHTML = `
     <h3>Kies startscore:</h3>
-    <button onclick="selecteerStartScore('${mode}', 301)">301</button>
-    <button onclick="selecteerStartScore('${mode}', 501)">501</button>
+    <div class="setup-btn-row">
+      <button class="primary-btn" onclick="selecteerStartScore('${mode}', 301)">301</button>
+      <button class="primary-btn" onclick="selecteerStartScore('${mode}', 501)">501</button>
+    </div>
+    <div class="setup-btn-row" style="max-width:200px;">
+      <button class="back-btn" onclick="terug_naarModus()">← Terug</button>
+    </div>
   `;
   document.body.insertBefore(scoreKeuze, document.getElementById("setup"));
   teamMode = (mode === 'teams');
+}
+
+function terug_naarModus() {
+  document.getElementById("scoreKeuze")?.remove();
+  document.getElementById("setup").style.display = "none";
+  document.getElementById("teamSetup").style.display = "none";
+  document.getElementById("teamSetup").innerHTML = "";
+  document.getElementById("keuzeMode").style.display = "block";
 }
 
 /**
@@ -170,13 +183,25 @@ function selecteerStartScore(mode, score) {
       <input type="number" id="aantalTeams" min="2" max="4" value="3" class="compact-input">
       <label for="aantalLegs">Aantal legs te winnen:</label>
       <input type="number" id="aantalLegs" min="1" max="10" value="2" class="compact-input">
-      </br>    
-      <button class="primary-btn" onclick="setupTeams()">Volgende</button>
+      </br>
+      <div class="setup-btn-row">
+        <button class="back-btn" onclick="terug_naarScore('teams')">← Terug</button>
+        <button class="primary-btn" onclick="setupTeams()">Volgende →</button>
+      </div>
     `;
     teamSetupEl.style.display = 'block';
   } else {
     document.getElementById("setup").style.display = 'block';
   }
+}
+
+function terug_naarScore(mode) {
+  document.getElementById("teamSetup").style.display = "none";
+  document.getElementById("teamSetup").innerHTML = "";
+  document.getElementById("setup").style.display = "none";
+  document.getElementById("namenSetup").style.display = "none";
+  document.getElementById("namenSetup").innerHTML = "";
+  selecteerModus(mode);
 }
 
 /**
@@ -196,7 +221,12 @@ function setupTeams() {
       </br>
     `;
   }
-  container.innerHTML += `<button onclick="startTeamSpel(${aantal})">Start teamspel</button>`;
+  container.innerHTML += `
+    <div class="setup-btn-row">
+      <button class="back-btn" onclick="terug_naarScore('teams')">← Terug</button>
+      <button class="primary-btn" onclick="startTeamSpel(${aantal})">Start teamspel</button>
+    </div>
+  `;
 }
 
 /**
@@ -253,6 +283,7 @@ function setupNamen() {
     "Stefan",
     "Kylian",
     "Joshua",
+	"Bunyamin",
 	"Sanne",
     "Anders"
   ];
@@ -268,8 +299,18 @@ function setupNamen() {
   }
 
   container.innerHTML += `
-    <button id="bevestigNamen" class="primary-btn" onclick="startSpel(${aantal})">Start spel</button>
+    <div class="setup-btn-row">
+      <button class="back-btn" onclick="terug_naarSetup()">← Terug</button>
+      <button id="bevestigNamen" class="primary-btn" onclick="startSpel(${aantal})">Start spel</button>
+    </div>
   `;
+}
+
+function terug_naarSetup() {
+  const namenSetup = document.getElementById("namenSetup");
+  namenSetup.style.display = "none";
+  namenSetup.innerHTML = "";
+  document.getElementById("setup").style.display = "block";
 }
 
 /**
@@ -337,13 +378,30 @@ if (score === 67) {
 
   let isLegOfMatchWin = false;
 
-  // push naar undo stack
+  // push naar undo stack (snapshot wordt hieronder aangevuld indien leg win)
   herstelGeschiedenis.push({
-  index,
-  score,
-  pijlen: 3
-});
+    index,
+    score,
+    pijlen: 3,
+    wasLegWin: false,
+    spelersSnapshot: null,
+    vorigeBeurt: index,
+    vorigeStartVolgordeIndex: startVolgordeIndex
+  });
 
+  // Sla snapshot op VÓÓR pijlen en stats worden bijgewerkt, zodat leg-win herstel volledig werkt
+  if (nieuweScore === 0) {
+    herstelGeschiedenis[herstelGeschiedenis.length - 1].wasLegWin = true;
+    herstelGeschiedenis[herstelGeschiedenis.length - 1].spelersSnapshot = spelers.map(s => ({
+      score: s.score,
+      geschiedenis: [...s.geschiedenis],
+      totaalGeschiedenis: [...s.totaalGeschiedenis],
+      legsGewonnen: s.legsGewonnen,
+      pijlenGegooid: s.pijlenGegooid,
+      besteLeg: s.besteLeg,
+      hoogsteFinish: s.hoogsteFinish
+    }));
+  }
 
   // pijlen tellen
   speler.pijlenGegooid = (speler.pijlenGegooid || 0) + 3;
@@ -458,14 +516,32 @@ function verwerkTeamBeurt(tIndex) {
 
   let isLegOfMatchWin = false;
 
-  // undo stack
+  // undo stack (snapshot wordt hieronder aangevuld indien leg win)
   herstelGeschiedenis.push({
-  team: tIndex,
-  score,
-  spelerIndex,
-  pijlen: 3
-});
+    team: tIndex,
+    score,
+    spelerIndex,
+    pijlen: 3,
+    wasLegWin: false,
+    teamsSnapshot: null,
+    vorigeBeurt: tIndex,
+    vorigeTeamBeurtIndex: teamBeurtIndex,
+    vorigeStartVolgordeIndex: startVolgordeIndex
+  });
 
+  // Sla snapshot op VÓÓR pijlen en stats worden bijgewerkt
+  if (nieuweScore === 0) {
+    herstelGeschiedenis[herstelGeschiedenis.length - 1].wasLegWin = true;
+    herstelGeschiedenis[herstelGeschiedenis.length - 1].teamsSnapshot = teams.map(t => ({
+      score: t.score,
+      geschiedenis: [...t.geschiedenis],
+      totaalGeschiedenis: [...t.totaalGeschiedenis],
+      legsGewonnen: t.legsGewonnen,
+      pijlenGegooid: t.pijlenGegooid,
+      besteLeg: t.besteLeg,
+      hoogsteFinish: t.hoogsteFinish
+    }));
+  }
 
   // pijlen tellen
   team.pijlenGegooid = (team.pijlenGegooid || 0) + 3;
@@ -630,51 +706,65 @@ function herstelLaatsteScore() {
   const laatste = herstelGeschiedenis.pop();
 
   if (teamMode && laatste?.team !== undefined) {
-    const t = teams[laatste.team];
-    t.score = Math.min(t.score + laatste.score, startScore);
 
-// geschiedenis & gemiddelde herstellen
-if (t.geschiedenis.length) t.geschiedenis.pop();
-if (t.totaalGeschiedenis.length) t.totaalGeschiedenis.pop();
+    // ── Leg-win herstel: zet alle teams terug naar snapshot ──
+    if (laatste.wasLegWin && laatste.teamsSnapshot) {
+      laatste.teamsSnapshot.forEach((snap, i) => {
+        teams[i].score              = snap.score;
+        teams[i].geschiedenis       = [...snap.geschiedenis];
+        teams[i].totaalGeschiedenis = [...snap.totaalGeschiedenis];
+        teams[i].legsGewonnen       = snap.legsGewonnen;
+        teams[i].pijlenGegooid      = snap.pijlenGegooid;
+        teams[i].besteLeg           = snap.besteLeg;
+        teams[i].hoogsteFinish      = snap.hoogsteFinish;
+      });
+      beurt               = laatste.vorigeBeurt;
+      teamBeurtIndex      = laatste.vorigeTeamBeurtIndex;
+      startVolgordeIndex  = laatste.vorigeStartVolgordeIndex;
+    } else {
+      // Normale herstel
+      const t = teams[laatste.team];
+      t.score = Math.min(t.score + laatste.score, startScore);
+      if (t.geschiedenis.length) t.geschiedenis.pop();
+      if (t.totaalGeschiedenis.length) t.totaalGeschiedenis.pop();
+      t.pijlenGegooid = Math.max(0, (t.pijlenGegooid || 0) - (laatste.pijlen || 3));
+      beurt = laatste.team;
+      teamBeurtIndex = Math.max(0, laatste.spelerIndex);
+    }
 
-// pijlen herstellen
-t.pijlenGegooid = Math.max(0, (t.pijlenGegooid || 0) - (laatste.pijlen || 3));
-
-// beurt herstellen
-beurt = laatste.team;
-teamBeurtIndex = Math.max(0, laatste.spelerIndex);
-
-sessieGeschiedenis.push(
-  `Herstel: ${t.spelers[teamBeurtIndex % t.spelers.length]} (${t.naam}) is weer aan de beurt.`
-);
-suppressNextScoreAnnouncement = true;
-renderTeamSpel();
-
-    sessieGeschiedenis.push(`Herstel: ${t.spelers[teamBeurtIndex % t.spelers.length]} (${t.naam}) is weer aan de beurt.`);
-	suppressNextScoreAnnouncement = true;
+    sessieGeschiedenis.push(
+      `Herstel: ${teams[beurt].spelers[teamBeurtIndex % teams[beurt].spelers.length]} (${teams[beurt].naam}) is weer aan de beurt.`
+    );
+    suppressNextScoreAnnouncement = true;
     renderTeamSpel();
+
   } else if (!teamMode && laatste?.index !== undefined) {
-    const s = spelers[laatste.index];
 
-// score terug
-s.score = Math.min(s.score + laatste.score, startScore);
+    // ── Leg-win herstel: zet alle spelers terug naar snapshot ──
+    if (laatste.wasLegWin && laatste.spelersSnapshot) {
+      laatste.spelersSnapshot.forEach((snap, i) => {
+        spelers[i].score              = snap.score;
+        spelers[i].geschiedenis       = [...snap.geschiedenis];
+        spelers[i].totaalGeschiedenis = [...snap.totaalGeschiedenis];
+        spelers[i].legsGewonnen       = snap.legsGewonnen;
+        spelers[i].pijlenGegooid      = snap.pijlenGegooid;
+        spelers[i].besteLeg           = snap.besteLeg;
+        spelers[i].hoogsteFinish      = snap.hoogsteFinish;
+      });
+      beurt              = laatste.vorigeBeurt;
+      startVolgordeIndex = laatste.vorigeStartVolgordeIndex;
+    } else {
+      // Normale herstel
+      const s = spelers[laatste.index];
+      s.score = Math.min(s.score + laatste.score, startScore);
+      if (s.geschiedenis.length) s.geschiedenis.pop();
+      if (s.totaalGeschiedenis.length) s.totaalGeschiedenis.pop();
+      s.pijlenGegooid = Math.max(0, (s.pijlenGegooid || 0) - (laatste.pijlen || 3));
+      beurt = laatste.index;
+    }
 
-// geschiedenis & gemiddelde herstellen
-if (s.geschiedenis.length) s.geschiedenis.pop();
-if (s.totaalGeschiedenis.length) s.totaalGeschiedenis.pop();
-
-// pijlen terugzetten
-s.pijlenGegooid = Math.max(0, (s.pijlenGegooid || 0) - (laatste.pijlen || 3));
-
-// beurt terug
-beurt = laatste.index;
-
-sessieGeschiedenis.push(`Herstel: ${s.naam} is weer aan de beurt.`);
-suppressNextScoreAnnouncement = true;
-renderSpel();
-
-    sessieGeschiedenis.push(`Herstel: ${s.naam} is weer aan de beurt.`);
-	suppressNextScoreAnnouncement = true;
+    sessieGeschiedenis.push(`Herstel: ${spelers[beurt].naam} is weer aan de beurt.`);
+    suppressNextScoreAnnouncement = true;
     renderSpel();
   }
 }
@@ -759,7 +849,6 @@ function snelScoreInvoeren(score) {
 }
 
 function renderSpel() {
-  // Hook voor mobile.js: toon game-menu-items
   if (typeof _setGameMenuItems === "function") _setGameMenuItems(true);
   toggleSpelControls(true);
   toggleAddPlayerSmallBtn(!teamMode);
@@ -767,29 +856,132 @@ function renderSpel() {
   const container = document.getElementById("spel");
   container.innerHTML = '';
 
+  const actief = spelers[beurt];
+  const nextIdx = (beurt + 1) % spelers.length;
+
+  // ── Desktop layout (ds-* elements) ──
+  const desktopWrap = document.createElement("div");
+  desktopWrap.className = "ds-actief-wrap";
+
+  const avgHuidig = actief.geschiedenis.length ? gemiddelde(actief.geschiedenis).toFixed(1) : '—';
+  const avgTotaal = actief.totaalGeschiedenis.length ? gemiddelde(actief.totaalGeschiedenis).toFixed(1) : '—';
+  const checkout = getCheckoutHint(actief.score);
+  const hist = actief.geschiedenis.slice(-6).join('  ·  ') || '—';
+
+  desktopWrap.innerHTML = `
+    <div class="ds-actief">
+      <button class="ds-delete-btn" onclick="verwijderSpeler(${beurt})" title="Speler verwijderen">✖</button>
+
+      <div class="ds-actief-left">
+        <div class="ds-actief-name">${actief.naam}</div>
+        <div class="ds-actief-legs">Legs: ${actief.legsGewonnen} / ${legsTeWinnen}</div>
+        <div class="ds-actief-stat-grid">
+          <div class="ds-stat">
+            <div class="ds-stat-label">Gem. leg</div>
+            <div class="ds-stat-value">${avgHuidig}</div>
+          </div>
+          <div class="ds-stat">
+            <div class="ds-stat-label">Gem. totaal</div>
+            <div class="ds-stat-value">${avgTotaal}</div>
+          </div>
+          <div class="ds-stat">
+            <div class="ds-stat-label">Pijlen</div>
+            <div class="ds-stat-value">${actief.pijlenGegooid || 0}</div>
+          </div>
+          <div class="ds-stat">
+            <div class="ds-stat-label">Beste leg</div>
+            <div class="ds-stat-value">${actief.besteLeg || '—'}</div>
+          </div>
+          <div class="ds-stat">
+            <div class="ds-stat-label">Hoogste finish</div>
+            <div class="ds-stat-value">${actief.hoogsteFinish || '—'}</div>
+          </div>
+        </div>
+        ${checkout !== '-' ? `<div class="ds-checkout-hint">🎯 Checkout: ${checkout}</div>` : ''}
+        <div class="ds-geschiedenis-text">📋 ${hist}</div>
+      </div>
+
+      <div class="ds-actief-score-wrap">
+        <div class="ds-actief-big-score">${actief.score}</div>
+        <div class="ds-label-score">resterend</div>
+      </div>
+
+      <div class="ds-actief-right">
+        <div class="ds-invoer-label">Score invoeren</div>
+        <input id="invoer" class="ds-invoer-input" type="number" min="0" max="180" placeholder="0" autocomplete="off">
+        <button class="ds-bevestig-btn" onclick="verwerkBeurt(${beurt})">✓ Bevestig</button>
+        <div class="ds-quick-group">
+          <button class="ds-quick-btn" onclick="snelScoreInvoeren(11)">11</button>
+          <button class="ds-quick-btn" onclick="snelScoreInvoeren(26)">26</button>
+          <button class="ds-quick-btn" onclick="snelScoreInvoeren(67)">67</button>
+        </div>
+      </div>
+    </div>
+  `;
+  container.appendChild(desktopWrap);
+
+  // ── Compact tiles for ALL players ──
+  const othersWrap = document.createElement("div");
+  othersWrap.className = "ds-tiles-wrap";
+
+  const tilesLabel = document.createElement("div");
+  tilesLabel.className = "ds-tiles-label";
+  tilesLabel.textContent = "Alle spelers";
+  othersWrap.appendChild(tilesLabel);
+
+  const tilesGrid = document.createElement("div");
+  tilesGrid.className = "ds-tiles-grid";
+
+  spelers.forEach((speler, index) => {
+    const isActief = (index === beurt);
+    const avg = speler.totaalGeschiedenis.length ? gemiddelde(speler.totaalGeschiedenis).toFixed(1) : '—';
+    const avgLeg = speler.geschiedenis.length ? gemiddelde(speler.geschiedenis).toFixed(1) : '—';
+    const checkout = getCheckoutHint(speler.score);
+    let cls = "ds-tile";
+    if (isActief) cls += " ds-tile-actief";
+
+    const tile = document.createElement("div");
+    tile.className = cls;
+    tile.innerHTML = `
+      <div class="ds-tile-header">
+        <div class="ds-tile-name">${isActief ? '🎯 ' : ''}${speler.naam}</div>
+        <div class="ds-tile-score">${speler.score}</div>
+      </div>
+      <div class="ds-tile-legs">${speler.legsGewonnen}/${legsTeWinnen} legs</div>
+      <div class="ds-tile-stats">
+        <div class="ds-tile-stat">Gem leg: <strong>${avgLeg}</strong></div>
+        <div class="ds-tile-stat">Gem totaal: <strong>${avg}</strong></div>
+        <div class="ds-tile-stat">Pijlen: <strong>${speler.pijlenGegooid || 0}</strong></div>
+        <div class="ds-tile-stat">Beste leg: <strong>${speler.besteLeg || '—'}</strong></div>
+        <div class="ds-tile-stat">H. finish: <strong>${speler.hoogsteFinish || '—'}</strong></div>
+        ${checkout !== '-' ? `<div class="ds-tile-checkout ds-tile-stat">🎯 ${checkout}</div>` : '<div class="ds-tile-stat"></div>'}
+      </div>
+    `;
+    tilesGrid.appendChild(tile);
+  });
+  othersWrap.appendChild(tilesGrid);
+  container.appendChild(othersWrap);
+
+  // ── Mobile fallback: old .speler divs (hidden on desktop via CSS) ──
   spelers.forEach((speler, index) => {
     const isBeurt = index === beurt;
-    const avgHuidig = speler.geschiedenis.length ? gemiddelde(speler.geschiedenis).toFixed(1) : 0;
-    const avgTotaal = speler.totaalGeschiedenis.length ? gemiddelde(speler.totaalGeschiedenis).toFixed(1) : 0;
-
+    const avgH = speler.geschiedenis.length ? gemiddelde(speler.geschiedenis).toFixed(1) : 0;
+    const avgT = speler.totaalGeschiedenis.length ? gemiddelde(speler.totaalGeschiedenis).toFixed(1) : 0;
     const div = document.createElement("div");
     div.className = "speler" + (isBeurt ? " aan-de-beurt" : "");
     div.innerHTML = `
-	  <span class="remove-speler" onclick="verwijderSpeler(${index})">✖</span>
+      <span class="remove-speler" onclick="verwijderSpeler(${index})">✖</span>
       <h2>${speler.naam}</h2>
       <div class="grote-score">${speler.score}</div>
-      <p>Legs gewonnen: ${speler.legsGewonnen}/${legsTeWinnen}</p>
-      <p>Gemiddelde: ${avgHuidig}</p>
-      <p>Gemiddelde totaal: ${avgTotaal}</p>
-      <p>Pijlen gegooid: ${speler.pijlenGegooid || 0}</p>
-      <p>Beste leg: ${speler.besteLeg || '-'}</p>
-      <p>Hoogste finish: ${speler.hoogsteFinish || '-'}</p>
-      <p>Checkout hint: <strong>${getCheckoutHint(speler.score)}</strong></p>
-      <p class="geschiedenis">Geschiedenis: ${speler.geschiedenis.join(", ")}</p>
+      <p>Legs: ${speler.legsGewonnen}/${legsTeWinnen}</p>
+      <p>Gem: ${avgH} / Totaal: ${avgT}</p>
+      <p>Pijlen: ${speler.pijlenGegooid || 0} · Beste: ${speler.besteLeg || '-'}</p>
+      <p>Checkout: <strong>${getCheckoutHint(speler.score)}</strong></p>
+      <p class="geschiedenis">${speler.geschiedenis.join(", ")}</p>
       ${isBeurt ? `
-        <label for="invoer">Score invoeren:</label>
+        <label for="invoer">Score:</label>
         <input id="invoer" type="number" min="0" max="180">
-        <button class="primary-btn" onclick="verwerkBeurt(${index})">Bevestig beurt</button>
+        <button class="primary-btn" onclick="verwerkBeurt(${index})">Bevestig</button>
         <div class="quick-score-group">
           <button class="quick-score-btn" onclick="snelScoreInvoeren(11)">11</button>
           <button class="quick-score-btn" onclick="snelScoreInvoeren(26)">26</button>
@@ -800,13 +992,10 @@ function renderSpel() {
     container.appendChild(div);
   });
 
-  // Zorg dat input werkt en Enter toetst
   const input = document.getElementById('invoer');
   if (input) {
     input.addEventListener('keydown', function(e) {
-      if (["e", "E", "+", "-"].includes(e.key)) {
-        e.preventDefault();
-      }
+      if (["e", "E", "+", "-"].includes(e.key)) e.preventDefault();
     });
     setTimeout(() => {
       input.focus();
@@ -819,7 +1008,6 @@ function renderSpel() {
     }, 0);
   }
 
-  // start overlay en audio bij eerste leg
   if (eersteLeg) {
     eersteLeg = false;
     const overlay = document.getElementById("startLogoOverlay");
@@ -830,7 +1018,6 @@ function renderSpel() {
   }
 
   suppressNextScoreAnnouncement = false;
-
   updateStatistieken();
 }
 
@@ -838,51 +1025,145 @@ function renderSpel() {
  * Render het spel voor team mode.
  */
 function renderTeamSpel() {
-  // Hook voor mobile.js: toon game-menu-items
   if (typeof _setGameMenuItems === "function") _setGameMenuItems(true);
   toggleSpelControls(true);
-  toggleAddPlayerSmallBtn(false); // geen nieuwe speler knop in teammode
+  toggleAddPlayerSmallBtn(false);
 
   const container = document.getElementById("spel");
   container.innerHTML = '';
 
-  teams.forEach((team, tIndex) => {
-    const spelerNaam = team.spelers[teamBeurtIndex % Math.max(1, team.spelers.length)] || "Speler";
-    const isBeurt = tIndex === beurt;
+  const actiefTeam = teams[beurt];
+  const spelerNaam = actiefTeam.spelers[teamBeurtIndex % Math.max(1, actiefTeam.spelers.length)] || "Speler";
+  const nextIdx = (beurt + 1) % teams.length;
 
+  // ── Desktop: big active tile ──
+  const desktopWrap = document.createElement("div");
+  desktopWrap.className = "ds-actief-wrap";
+
+  const avgHuidig = actiefTeam.geschiedenis.length ? gemiddelde(actiefTeam.geschiedenis).toFixed(1) : '—';
+  const avgTotaal = actiefTeam.totaalGeschiedenis.length ? gemiddelde(actiefTeam.totaalGeschiedenis).toFixed(1) : '—';
+  const checkout = getCheckoutHint(actiefTeam.score);
+
+  desktopWrap.innerHTML = `
+    <div class="ds-actief">
+      <div class="ds-actief-left">
+        <div class="ds-actief-name">${spelerNaam}</div>
+        <div class="ds-actief-legs">${actiefTeam.naam} · Legs: ${actiefTeam.legsGewonnen} / ${legsTeWinnen}</div>
+        <div class="ds-actief-stat-grid">
+          <div class="ds-stat">
+            <div class="ds-stat-label">Gem. leg</div>
+            <div class="ds-stat-value">${avgHuidig}</div>
+          </div>
+          <div class="ds-stat">
+            <div class="ds-stat-label">Gem. totaal</div>
+            <div class="ds-stat-value">${avgTotaal}</div>
+          </div>
+          <div class="ds-stat">
+            <div class="ds-stat-label">Pijlen</div>
+            <div class="ds-stat-value">${actiefTeam.pijlenGegooid || 0}</div>
+          </div>
+          <div class="ds-stat">
+            <div class="ds-stat-label">Beste leg</div>
+            <div class="ds-stat-value">${actiefTeam.besteLeg || '—'}</div>
+          </div>
+          <div class="ds-stat">
+            <div class="ds-stat-label">Hoogste finish</div>
+            <div class="ds-stat-value">${actiefTeam.hoogsteFinish || '—'}</div>
+          </div>
+        </div>
+        ${checkout !== '-' ? `<div class="ds-checkout-hint">🎯 Checkout: ${checkout}</div>` : ''}
+      </div>
+
+      <div class="ds-actief-score-wrap">
+        <div class="ds-actief-big-score">${actiefTeam.score}</div>
+        <div class="ds-label-score">resterend</div>
+      </div>
+
+      <div class="ds-actief-right">
+        <div class="ds-invoer-label">Score invoeren</div>
+        <input id="invoer" class="ds-invoer-input" type="number" min="0" max="180" placeholder="0" autocomplete="off">
+        <button class="ds-bevestig-btn" onclick="verwerkTeamBeurt(${beurt})">✓ Bevestig</button>
+        <div class="ds-quick-group">
+          <button class="ds-quick-btn" onclick="snelScoreInvoeren(11)">11</button>
+          <button class="ds-quick-btn" onclick="snelScoreInvoeren(26)">26</button>
+          <button class="ds-quick-btn" onclick="snelScoreInvoeren(67)">67</button>
+        </div>
+      </div>
+    </div>
+  `;
+  container.appendChild(desktopWrap);
+
+  // ── Compact tiles for ALL teams ──
+  const othersWrap = document.createElement("div");
+  othersWrap.className = "ds-tiles-wrap";
+
+  const label = document.createElement("div");
+  label.className = "ds-tiles-label";
+  label.textContent = "Alle teams";
+  othersWrap.appendChild(label);
+
+  const grid = document.createElement("div");
+  grid.className = "ds-tiles-grid";
+  teams.forEach((team, tIndex) => {
+    const isActief = (tIndex === beurt);
+    const avg = team.totaalGeschiedenis.length ? gemiddelde(team.totaalGeschiedenis).toFixed(1) : '—';
+    const avgLeg = team.geschiedenis.length ? gemiddelde(team.geschiedenis).toFixed(1) : '—';
+    const co = getCheckoutHint(team.score);
+    let cls = "ds-tile";
+    if (isActief) cls += " ds-tile-actief";
+    const tile = document.createElement("div");
+    tile.className = cls;
+    tile.innerHTML = `
+      <div class="ds-tile-header">
+        <div class="ds-tile-name">${isActief ? '🎯 ' : ''}${team.naam}</div>
+        <div class="ds-tile-score">${team.score}</div>
+      </div>
+      <div class="ds-tile-legs">${team.legsGewonnen}/${legsTeWinnen} legs</div>
+      <div class="ds-tile-stats">
+        <div class="ds-tile-stat">Gem leg: <strong>${avgLeg}</strong></div>
+        <div class="ds-tile-stat">Gem totaal: <strong>${avg}</strong></div>
+        <div class="ds-tile-stat">Pijlen: <strong>${team.pijlenGegooid || 0}</strong></div>
+        <div class="ds-tile-stat">Beste leg: <strong>${team.besteLeg || '—'}</strong></div>
+        <div class="ds-tile-stat">H. finish: <strong>${team.hoogsteFinish || '—'}</strong></div>
+        ${co !== '-' ? `<div class="ds-tile-checkout ds-tile-stat">🎯 ${co}</div>` : '<div class="ds-tile-stat"></div>'}
+      </div>
+    `;
+    grid.appendChild(tile);
+  });
+  othersWrap.appendChild(grid);
+  container.appendChild(othersWrap);
+
+  // ── Mobile fallback .speler divs ──
+  teams.forEach((team, tIndex) => {
+    const sNaam = team.spelers[teamBeurtIndex % Math.max(1, team.spelers.length)] || "Speler";
+    const isBeurt = tIndex === beurt;
     const div = document.createElement("div");
     div.className = "speler" + (isBeurt ? " aan-de-beurt" : "");
     div.innerHTML = `
-      <h2>${spelerNaam} (${team.naam})</h2>
+      <h2>${sNaam} (${team.naam})</h2>
       <div class="grote-score">${team.score}</div>
-      <p>Legs gewonnen: ${team.legsGewonnen}/${legsTeWinnen}</p>
-      <p>Gemiddelde: ${team.geschiedenis.length ? gemiddelde(team.geschiedenis).toFixed(1) : 0}</p>
-      <p>Gemiddelde totaal: ${team.totaalGeschiedenis.length ? gemiddelde(team.totaalGeschiedenis).toFixed(1) : 0}</p>
-      <p>Pijlen gegooid: ${team.pijlenGegooid || 0}</p>
-      <p>Beste leg: ${team.besteLeg || '-'}</p>
-      <p>Hoogste finish: ${team.hoogsteFinish || '-'}</p>
-      <p>Checkout hint: <strong>${getCheckoutHint(team.score)}</strong></p>
+      <p>Legs: ${team.legsGewonnen}/${legsTeWinnen}</p>
+      <p>Gem: ${team.geschiedenis.length ? gemiddelde(team.geschiedenis).toFixed(1) : 0}</p>
+      <p>Pijlen: ${team.pijlenGegooid || 0} · Beste: ${team.besteLeg || '-'}</p>
+      <p>Checkout: <strong>${getCheckoutHint(team.score)}</strong></p>
       ${isBeurt ? `
-        <label for="invoer">Score invoeren:</label>
+        <label for="invoer">Score:</label>
         <input id="invoer" type="number" min="0" max="180">
-        <button class="primary-btn" onclick="verwerkTeamBeurt(${tIndex})">Bevestig beurt</button>
+        <button class="primary-btn" onclick="verwerkTeamBeurt(${tIndex})">Bevestig</button>
         <div class="quick-score-group">
           <button class="quick-score-btn" onclick="snelScoreInvoeren(11)">11</button>
           <button class="quick-score-btn" onclick="snelScoreInvoeren(26)">26</button>
-          <button class="quick-score-btn quick-score-btn-gold" onclick="snelScoreInvoeren(67)">67</button>
+          <button class="quick-score-btn" onclick="snelScoreInvoeren(67)">67</button>
         </div>
       ` : ''}
     `;
     container.appendChild(div);
   });
 
-  // input focus / enter handling
   const input = document.getElementById('invoer');
   if (input) {
     input.addEventListener('keydown', function(e) {
-      if (["e", "E", "+", "-"].includes(e.key)) {
-        e.preventDefault();
-      }
+      if (["e", "E", "+", "-"].includes(e.key)) e.preventDefault();
     });
     setTimeout(() => {
       input.focus();
@@ -905,7 +1186,6 @@ function renderTeamSpel() {
   }
 
   suppressNextScoreAnnouncement = false;
-
   updateStatistieken();
 }
 
@@ -949,11 +1229,12 @@ function toonEindscherm(winnaar, deelnemers) {
 
     const isWinnaar = (speler.naam === winnaar.naam);
 
-    // podium-classes voor #1–#3
+    // podium-classes voor #1–#3, geen klasse voor de rest
     let podiumClass = "";
     if (idx === 0) podiumClass = "podium-goud";
     else if (idx === 1) podiumClass = "podium-zilver";
     else if (idx === 2) podiumClass = "podium-brons";
+    else podiumClass = "podium-none";
 
     html += `
       <div class="speler ${isWinnaar ? "winnaar-highlight" : ""} ${podiumClass}">
@@ -969,13 +1250,14 @@ function toonEindscherm(winnaar, deelnemers) {
     `;
   });
 
-  html += `</div><button onclick="opnieuwSpelen()">Opnieuw spelen</button>`;
+  html += `</div><div class="eind-btn-row"><button onclick="opnieuwSpelen()">Opnieuw spelen</button>`;
 
   // Voeg hier knop toe om nieuwe speler toe te voegen (alleen single mode)
   if (!teamMode) {
-    html += `<button style="background-color:#28a745; margin-left:10px;" onclick="nieuweSpelerToevoegen()">➕ Nieuwe speler toevoegen</button>`;
+    html += `<button style="background-color:#28a745;" onclick="nieuweSpelerToevoegen()">➕ Nieuwe speler toevoegen</button>`;
   }
 
+  html += `</div>`;
   container.innerHTML = html;
 }
 
