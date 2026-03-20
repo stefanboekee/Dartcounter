@@ -887,13 +887,14 @@ body.light-mode .ctrl-stop { background:#fde8e8; border-color:#f5a5a5; color:#c0
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    padding: 11px 14px;
-    flex: 0 1 175px;
-    min-width: 155px;
+    padding: 13px 16px;
+    flex: 0 1 215px;
+    min-width: 195px;
     display: flex;
     flex-direction: column;
     gap: 0;
     transition: border-color 0.2s, background 0.2s;
+    position: relative;
   }
   /* Active player tile */
   .ds-tile-actief {
@@ -915,16 +916,17 @@ body.light-mode .ctrl-stop { background:#fde8e8; border-color:#f5a5a5; color:#c0
     margin-bottom: 4px;
   }
   .ds-tile-name {
-    font-size: 0.75rem;
+    font-size: 0.82rem;
     font-weight: 700;
     color: var(--text-dim);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    white-space: nowrap;
+    white-space: normal;
+    word-break: break-word;
     overflow: hidden;
-    text-overflow: ellipsis;
     flex: 1;
     padding-right: 6px;
+    line-height: 1.25;
   }
   .ds-tile-actief .ds-tile-name { color: var(--accent); }
   .ds-tile-score {
@@ -976,6 +978,46 @@ body.light-mode .ctrl-stop { background:#fde8e8; border-color:#f5a5a5; color:#c0
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  /* Score history strip */
+  .ds-tile-history {
+    margin-top: 6px;
+    padding-top: 5px;
+    border-top: 1px solid var(--border);
+    font-size: 0.64rem;
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.02em;
+  }
+
+  /* Remove button inside small tile */
+  .ds-tile-remove-btn {
+    background: transparent;
+    border: none;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 1px 3px;
+    opacity: 0.4;
+    transition: opacity 0.15s, color 0.15s;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .ds-tile-remove-btn:hover { opacity: 1; color: var(--red); }
+
+  /* Large train emoji — bottom-right corner of tile */
+  .ds-tile-train {
+    position: absolute;
+    bottom: 7px;
+    right: 10px;
+    font-size: 1.6rem;
+    line-height: 1;
+    pointer-events: none;
+    opacity: 0.55;
+    filter: grayscale(0.1);
   }
 
   /* Desktop controls row */
@@ -1044,6 +1086,24 @@ body.light-mode .ctrl-stop { background:#fde8e8; border-color:#f5a5a5; color:#c0
     justify-content: center;
     gap: 12px;
     flex-wrap: wrap;
-    margin-top: 10px;
+    margin-top: 20px;
+    padding: 0 16px 20px;
   }
+
+  .eind-btn {
+    padding: 14px 28px;
+    font-size: 1rem;
+    font-weight: 700;
+    border: none;
+    border-radius: var(--radius);
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    min-width: 160px;
+  }
+  .eind-btn:active { transform: scale(0.97); }
+  .eind-btn-blauw  { background: var(--blue); }
+  .eind-btn-blauw:hover  { background: var(--blue-dark); }
+  .eind-btn-groen  { background: var(--green); }
+  .eind-btn-groen:hover  { background: var(--green-dark); }
 }

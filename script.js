@@ -868,12 +868,15 @@ function renderSpel() {
   const checkout = getCheckoutHint(actief.score);
   const hist = actief.geschiedenis.slice(-6).join('  ·  ') || '—';
 
+  // Train emoji for large tile: avg of current leg < 26
+  const actiefLegAvg = actief.geschiedenis.length ? gemiddelde(actief.geschiedenis) : null;
+  const actiefTrainEmoji = (actiefLegAvg !== null && actiefLegAvg < 26) ? ' 🚂' : '';
+
   desktopWrap.innerHTML = `
     <div class="ds-actief">
-      <button class="ds-delete-btn" onclick="verwijderSpeler(${beurt})" title="Speler verwijderen">✖</button>
 
       <div class="ds-actief-left">
-        <div class="ds-actief-name">${actief.naam}</div>
+        <div class="ds-actief-name">${actief.naam}${actiefTrainEmoji}</div>
         <div class="ds-actief-legs">Legs: ${actief.legsGewonnen} / ${legsTeWinnen}</div>
         <div class="ds-actief-stat-grid">
           <div class="ds-stat">
@@ -940,12 +943,19 @@ function renderSpel() {
     let cls = "ds-tile";
     if (isActief) cls += " ds-tile-actief";
 
+    const legAvgNum = speler.geschiedenis.length ? gemiddelde(speler.geschiedenis) : null;
+    const isTrain = legAvgNum !== null && legAvgNum < 26;
+    const histTekst = speler.geschiedenis.slice(-8).join(' · ') || '—';
+
     const tile = document.createElement("div");
     tile.className = cls;
     tile.innerHTML = `
       <div class="ds-tile-header">
         <div class="ds-tile-name">${isActief ? '🎯 ' : ''}${speler.naam}</div>
-        <div class="ds-tile-score">${speler.score}</div>
+        <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;">
+          <div class="ds-tile-score">${speler.score}</div>
+          <button class="ds-tile-remove-btn" onclick="verwijderSpeler(${index})" title="Speler verwijderen">✖</button>
+        </div>
       </div>
       <div class="ds-tile-legs">${speler.legsGewonnen}/${legsTeWinnen} legs</div>
       <div class="ds-tile-stats">
@@ -956,6 +966,8 @@ function renderSpel() {
         <div class="ds-tile-stat">H. finish: <strong>${speler.hoogsteFinish || '—'}</strong></div>
         ${checkout !== '-' ? `<div class="ds-tile-checkout ds-tile-stat">🎯 ${checkout}</div>` : '<div class="ds-tile-stat"></div>'}
       </div>
+      <div class="ds-tile-history">📋 ${histTekst}</div>
+      ${isTrain ? '<div class="ds-tile-train">🚂</div>' : ''}
     `;
     tilesGrid.appendChild(tile);
   });
@@ -1043,11 +1055,13 @@ function renderTeamSpel() {
   const avgHuidig = actiefTeam.geschiedenis.length ? gemiddelde(actiefTeam.geschiedenis).toFixed(1) : '—';
   const avgTotaal = actiefTeam.totaalGeschiedenis.length ? gemiddelde(actiefTeam.totaalGeschiedenis).toFixed(1) : '—';
   const checkout = getCheckoutHint(actiefTeam.score);
+  const teamLegAvgNum = actiefTeam.geschiedenis.length ? gemiddelde(actiefTeam.geschiedenis) : null;
+  const teamTrainEmoji = (teamLegAvgNum !== null && teamLegAvgNum < 26) ? ' 🚂' : '';
 
   desktopWrap.innerHTML = `
     <div class="ds-actief">
       <div class="ds-actief-left">
-        <div class="ds-actief-name">${spelerNaam}</div>
+        <div class="ds-actief-name">${spelerNaam}${teamTrainEmoji}</div>
         <div class="ds-actief-legs">${actiefTeam.naam} · Legs: ${actiefTeam.legsGewonnen} / ${legsTeWinnen}</div>
         <div class="ds-actief-stat-grid">
           <div class="ds-stat">
@@ -1111,6 +1125,9 @@ function renderTeamSpel() {
     const co = getCheckoutHint(team.score);
     let cls = "ds-tile";
     if (isActief) cls += " ds-tile-actief";
+    const teamTileAvg = team.geschiedenis.length ? gemiddelde(team.geschiedenis) : null;
+    const isTileTeamTrain = teamTileAvg !== null && teamTileAvg < 26;
+    const teamHistTekst = team.geschiedenis.slice(-8).join(' · ') || '—';
     const tile = document.createElement("div");
     tile.className = cls;
     tile.innerHTML = `
@@ -1127,6 +1144,8 @@ function renderTeamSpel() {
         <div class="ds-tile-stat">H. finish: <strong>${team.hoogsteFinish || '—'}</strong></div>
         ${co !== '-' ? `<div class="ds-tile-checkout ds-tile-stat">🎯 ${co}</div>` : '<div class="ds-tile-stat"></div>'}
       </div>
+      <div class="ds-tile-history">📋 ${teamHistTekst}</div>
+      ${isTileTeamTrain ? '<div class="ds-tile-train">🚂</div>' : ''}
     `;
     grid.appendChild(tile);
   });
@@ -1250,11 +1269,11 @@ function toonEindscherm(winnaar, deelnemers) {
     `;
   });
 
-  html += `</div><div class="eind-btn-row"><button onclick="opnieuwSpelen()">Opnieuw spelen</button>`;
+  html += `</div><div class="eind-btn-row"><button class="eind-btn eind-btn-blauw" onclick="opnieuwSpelen()">🔄 Opnieuw spelen</button>`;
 
   // Voeg hier knop toe om nieuwe speler toe te voegen (alleen single mode)
   if (!teamMode) {
-    html += `<button style="background-color:#28a745;" onclick="nieuweSpelerToevoegen()">➕ Nieuwe speler toevoegen</button>`;
+    html += `<button class="eind-btn eind-btn-groen" onclick="nieuweSpelerToevoegen()">➕ Speler toevoegen</button>`;
   }
 
   html += `</div>`;
