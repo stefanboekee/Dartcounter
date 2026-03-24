@@ -30,6 +30,12 @@ let herstelGeschiedenis = [];   // stapel voor undo (meerdere levels)
 let startVolgordeIndex = 0;
 let vorigeScore = null;
 
+// Team-modus beurtbeheer: één globale positie in de platte spelersvolgorde.
+// De platte volgorde is: T0S0, T1S0, T2S0, T0S1, T1S1, T2S1, T0S0, ...
+// legStartPositie telt elke leg +1 op (ook tussen matches door).
+let legStartPositie = 0;
+let globaleBeurtPositie = 0;
+
 let huidigeAudio = null; // globale referentie naar momenteel spelend audio-object
 let suppressNextScoreAnnouncement = false;
 
@@ -236,6 +242,8 @@ function startTeamSpel(aantal) {
   teams = [];
   beurt = 0;
   teamBeurtIndex = 0;
+  legStartPositie = 0;
+  globaleBeurtPositie = 0;
   sessieGeschiedenis = [];
   herstelGeschiedenis = [];
 
@@ -529,12 +537,12 @@ function verwerkTeamBeurt(tIndex) {
   }
 
   const team = teams[tIndex];
-  const spelerIndex = teamBeurtIndex % team.spelers.length;
+  const { spelerIndex } = teamBeurtInfo(globaleBeurtPositie);
   const nieuweScore = team.score - score;
 
   let isLegOfMatchWin = false;
 
-  // undo stack (snapshot wordt hieronder aangevuld indien leg win)
+  // undo stack
   herstelGeschiedenis.push({
     team: tIndex,
     score,
@@ -543,7 +551,8 @@ function verwerkTeamBeurt(tIndex) {
     wasLegWin: false,
     teamsSnapshot: null,
     vorigeBeurt: tIndex,
-    vorigeTeamBeurtIndex: teamBeurtIndex,
+    vorigeGlobaleBeurtPositie: globaleBeurtPositie,
+    vorigeLegStartPositie: legStartPositie,
     vorigeStartVolgordeIndex: startVolgordeIndex
   });
 
@@ -600,12 +609,13 @@ function verwerkTeamBeurt(tIndex) {
       t.score = startScore;
       t.pijlenGegooid = 0;
       t.geschiedenis = [];
-      t.trainActief = false;  // 🚂 reset voor nieuwe leg
+      t.trainActief = false;
     });
 
-    // volgende startteam + spelerrotatie
-    teamBeurtIndex++;
-    beurt = startVolgordeIndex = (startVolgordeIndex + 1) % teams.length;
+    // Volgende leg: startpositie schuift 1 op
+    legStartPositie++;
+    globaleBeurtPositie = legStartPositie;
+    beurt = teamBeurtInfo(globaleBeurtPositie).teamIndex;
   }
 
   /* =========================
@@ -623,10 +633,8 @@ function verwerkTeamBeurt(tIndex) {
     team.geschiedenis.push(score);
     team.totaalGeschiedenis.push(score);
 
-    beurt = (beurt + 1) % teams.length;
-    if (beurt === 0) {
-      teamBeurtIndex++;
-    }
+    globaleBeurtPositie++;
+    beurt = teamBeurtInfo(globaleBeurtPositie).teamIndex;
   }
 
   // input reset
@@ -752,8 +760,9 @@ function herstelLaatsteScore() {
         teams[i].besteLeg           = snap.besteLeg;
         teams[i].hoogsteFinish      = snap.hoogsteFinish;
       });
+      globaleBeurtPositie = laatste.vorigeGlobaleBeurtPositie;
+      legStartPositie     = laatste.vorigeLegStartPositie;
       beurt               = laatste.vorigeBeurt;
-      teamBeurtIndex      = laatste.vorigeTeamBeurtIndex;
       startVolgordeIndex  = laatste.vorigeStartVolgordeIndex;
     } else {
       // Normale herstel
@@ -762,12 +771,12 @@ function herstelLaatsteScore() {
       if (t.geschiedenis.length) t.geschiedenis.pop();
       if (t.totaalGeschiedenis.length) t.totaalGeschiedenis.pop();
       t.pijlenGegooid = Math.max(0, (t.pijlenGegooid || 0) - (laatste.pijlen || 3));
-      beurt = laatste.team;
-      teamBeurtIndex = Math.max(0, laatste.spelerIndex);
+      globaleBeurtPositie = laatste.vorigeGlobaleBeurtPositie;
+      beurt = laatste.vorigeBeurt;
     }
 
     sessieGeschiedenis.push(
-      `Herstel: ${teams[beurt].spelers[teamBeurtIndex % teams[beurt].spelers.length]} (${teams[beurt].naam}) is weer aan de beurt.`
+      `Herstel: ${teamBeurtInfo(globaleBeurtPositie).spelerNaam} (${teams[beurt].naam}) is weer aan de beurt.`
     );
     suppressNextScoreAnnouncement = true;
     renderTeamSpel();
@@ -816,6 +825,8 @@ function stopSpel() {
   teamMode = false;
   beurt = 0;
   teamBeurtIndex = 0;
+  legStartPositie = 0;
+  globaleBeurtPositie = 0;
   eersteLeg = true;
   startScore = 501;
   legsTeWinnen = 3;
@@ -1068,6 +1079,34 @@ function renderSpel() {
 }
 
 /**
+ * Bereken de huidige beurt in team-modus op basis van globaleBeurtPositie.
+ *
+ * Platte volgorde (voorbeeld 3 teams, 2 spelers per team):
+ *   positie 0 → T0S0, 1 → T1S0, 2 → T2S0,
+ *   positie 3 → T0S1, 4 → T1S1, 5 → T2S1,
+ *   positie 6 → T0S0 (herhaalt), ...
+ *
+ * De cycluslengte = aantalTeams × maxSpelersPerTeam.
+ * Bij teams met minder spelers wordt de spelerindex gewrapped (mod team.spelers.length).
+ *
+ * Retourneert { teamIndex, spelerIndex, spelerNaam }
+ */
+function teamBeurtInfo(positie) {
+  const aantalTeams = teams.length;
+  // Gebruik het maximum aantal spelers over alle teams als cycluslengte
+  const maxSpelers = teams.reduce((m, t) => Math.max(m, t.spelers.length), 1);
+  const cyclusLen = aantalTeams * maxSpelers;
+
+  const pos = ((positie % cyclusLen) + cyclusLen) % cyclusLen;
+  const teamIndex   = pos % aantalTeams;
+  const spelerSlot  = Math.floor(pos / aantalTeams);
+  const team        = teams[teamIndex];
+  const spelerIndex = spelerSlot % Math.max(1, team.spelers.length);
+  const spelerNaam  = team.spelers[spelerIndex] || "Speler";
+  return { teamIndex, spelerIndex, spelerNaam };
+}
+
+/**
  * Render het spel voor team mode.
  */
 function renderTeamSpel() {
@@ -1078,8 +1117,9 @@ function renderTeamSpel() {
   const container = document.getElementById("spel");
   container.innerHTML = '';
 
+  const { teamIndex: actiefTeamIdx, spelerNaam } = teamBeurtInfo(globaleBeurtPositie);
+  beurt = actiefTeamIdx;
   const actiefTeam = teams[beurt];
-  const spelerNaam = actiefTeam.spelers[teamBeurtIndex % Math.max(1, actiefTeam.spelers.length)] || "Speler";
   const nextIdx = (beurt + 1) % teams.length;
 
   // ── Desktop: big active tile ──
@@ -1188,12 +1228,14 @@ function renderTeamSpel() {
 
   // ── Mobile fallback .speler divs ──
   teams.forEach((team, tIndex) => {
-    const sNaam = team.spelers[teamBeurtIndex % Math.max(1, team.spelers.length)] || "Speler";
+    const { spelerNaam: sNaam } = teamBeurtInfo(globaleBeurtPositie - (beurt - tIndex + teams.length) % teams.length);
+    // Bereken de speler voor dit team op basis van hun relatieve positie
+    const { spelerNaam: tileSpelerNaam } = teamBeurtInfo(globaleBeurtPositie + ((tIndex - beurt + teams.length) % teams.length));
     const isBeurt = tIndex === beurt;
     const div = document.createElement("div");
     div.className = "speler" + (isBeurt ? " aan-de-beurt" : "");
     div.innerHTML = `
-      <h2>${sNaam} (${team.naam})</h2>
+      <h2>${tileSpelerNaam} (${team.naam})</h2>
       <div class="grote-score">${team.score}</div>
       <p>Legs: ${team.legsGewonnen}/${legsTeWinnen}</p>
       <p>Gem: ${team.geschiedenis.length ? gemiddelde(team.geschiedenis).toFixed(1) : 0}</p>
@@ -1324,11 +1366,18 @@ function opnieuwSpelen() {
   if (teamMode) {
     teams.forEach(t => {
       t.score = startScore;
+      t.geschiedenis = [];
       t.pijlenGegooid = 0;
       t.besteLeg = null;
+      t.hoogsteFinish = null;
       t.legsGewonnen = 0;
+      t.trainActief = false;
     });
-    beurt = startVolgordeIndex = (startVolgordeIndex + 1) % teams.length;
+    // Positie loopt door: volgende leg start één positie verder
+    legStartPositie++;
+    globaleBeurtPositie = legStartPositie;
+    teamBeurtIndex = 0;
+    beurt = teamBeurtInfo(globaleBeurtPositie).teamIndex;
     renderTeamSpel();
   } else {
     spelers.forEach(s => {
