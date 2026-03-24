@@ -252,7 +252,8 @@ function startTeamSpel(aantal) {
       totaalGeschiedenis: [],  // alle scores van alle legs
       pijlenGegooid: 0,
       besteLeg: null,
-      hoogsteFinish: null
+      hoogsteFinish: null,
+      trainActief: false     // 🚂 geluid al gespeeld deze leg?
     });
   }
 
@@ -339,7 +340,8 @@ function startSpel(aantal) {
       totaalGeschiedenis: [], // alle scores van alle legs
       legsGewonnen: 0,
       pijlenGegooid: 0,
-      besteLeg: null
+      besteLeg: null,
+      trainActief: false  // 🚂 geluid al gespeeld deze leg?
     });
   }
 
@@ -442,6 +444,7 @@ if (score === 67) {
       s.score = startScore;
       s.geschiedenis = [];
       s.pijlenGegooid = 0;
+      s.trainActief = false;  // 🚂 reset voor nieuwe leg
     });
 
     // volgende startspeler
@@ -472,17 +475,32 @@ if (score === 67) {
      🔊 SCORE AUDIO (alleen als GEEN leg/match win)
      ========================= */
   if (!isLegOfMatchWin) {
-    const audio = playSound(`${score}.mp3`);
+    const spelendeSpeler = spelers[index];
+    const legAvgNa = spelendeSpeler.geschiedenis.length ? gemiddelde(spelendeSpeler.geschiedenis) : null;
+    const opFinish = spelendeSpeler.score <= 170 && getCheckoutHint(spelendeSpeler.score) !== '-';
+    const isTrainNu = legAvgNa !== null && legAvgNa < 26 && !opFinish;
 
+    // Als speler boven 26 gemiddelde uitkomt, reset zodat het geluid opnieuw kan spelen
+    if (!isTrainNu) spelendeSpeler.trainActief = false;
+
+    // 🚂 Speel score-geluid eerst, daarna train als dat van toepassing is
+    const audio = playSound(`${score}.mp3`);
     if (audio) {
       audio.onended = () => {
-        const volgendeSpeler = spelers[beurt];
-        if (volgendeSpeler && volgendeSpeler.score <= 170) {
-          const intro = playSound('your_score_is.mp3');
-          if (intro) {
-            intro.onended = () => playSound(`${volgendeSpeler.score}.wav`);
-          } else {
-            playSound(`${volgendeSpeler.score}.wav`);
+        if (isTrainNu && !spelendeSpeler.trainActief) {
+          // Eerste keer (of opnieuw) onder 26: speel trein
+          spelendeSpeler.trainActief = true;
+          playSound('train.mp3');
+        } else {
+          // Normale stroom: aankondiging volgende speler
+          const volgendeSpeler = spelers[beurt];
+          if (volgendeSpeler && volgendeSpeler.score <= 170) {
+            const intro = playSound('your_score_is.mp3');
+            if (intro) {
+              intro.onended = () => playSound(`${volgendeSpeler.score}.wav`);
+            } else {
+              playSound(`${volgendeSpeler.score}.wav`);
+            }
           }
         }
       };
@@ -582,6 +600,7 @@ function verwerkTeamBeurt(tIndex) {
       t.score = startScore;
       t.pijlenGegooid = 0;
       t.geschiedenis = [];
+      t.trainActief = false;  // 🚂 reset voor nieuwe leg
     });
 
     // volgende startteam + spelerrotatie
@@ -617,17 +636,31 @@ function verwerkTeamBeurt(tIndex) {
      🔊 SCORE AUDIO (alleen als GEEN leg/match win)
      ========================= */
   if (!isLegOfMatchWin) {
-    const audio = playSound(`${score}.mp3`);
+    const teamLegAvgNa = team.geschiedenis.length ? gemiddelde(team.geschiedenis) : null;
+    const teamOpFinish = team.score <= 170 && getCheckoutHint(team.score) !== '-';
+    const isTeamTrainNu = teamLegAvgNa !== null && teamLegAvgNa < 26 && !teamOpFinish;
 
+    // Als team boven 26 gemiddelde uitkomt, reset zodat het geluid opnieuw kan spelen
+    if (!isTeamTrainNu) team.trainActief = false;
+
+    // 🚂 Speel score-geluid eerst, daarna train als dat van toepassing is
+    const audio = playSound(`${score}.mp3`);
     if (audio) {
       audio.onended = () => {
-        const volgendeTeam = teams[beurt];
-        if (volgendeTeam && volgendeTeam.score <= 170) {
-          const intro = playSound('your_score_is.mp3');
-          if (intro) {
-            intro.onended = () => playSound(`${volgendeTeam.score}.wav`);
-          } else {
-            playSound(`${volgendeTeam.score}.wav`);
+        if (isTeamTrainNu && !team.trainActief) {
+          // Eerste keer (of opnieuw) onder 26: speel trein
+          team.trainActief = true;
+          playSound('train.mp3');
+        } else {
+          // Normale stroom: aankondiging volgend team
+          const volgendeTeam = teams[beurt];
+          if (volgendeTeam && volgendeTeam.score <= 170) {
+            const intro = playSound('your_score_is.mp3');
+            if (intro) {
+              intro.onended = () => playSound(`${volgendeTeam.score}.wav`);
+            } else {
+              playSound(`${volgendeTeam.score}.wav`);
+            }
           }
         }
       };
@@ -681,6 +714,7 @@ function herstartSpel() {
     s.besteLeg = null;
     s.hoogsteFinish = s.hoogsteFinish || null; // behouden indien aanwezig
     s.legsGewonnen = 0;
+    s.trainActief = false;
   });
 
   startVolgordeIndex = 0;
@@ -1303,6 +1337,7 @@ function opnieuwSpelen() {
       s.pijlenGegooid = 0;
       s.besteLeg = null;
       s.legsGewonnen = 0;
+      s.trainActief = false;
     });
     beurt = startVolgordeIndex = (startVolgordeIndex + 1) % spelers.length;
     renderSpel();
