@@ -1486,18 +1486,31 @@ function toggleInput(index) {
 function verwijderSpeler(index) {
   if (!confirm(`Weet je zeker dat je ${spelers[index].naam} wilt verwijderen?`)) return;
 
-  spelers.splice(index, 1);
+  const wasHuidigeSpeler = (index === beurt);
 
-  // Als huidige beurt speler was → beurt corrigeren
-  if (beurt >= spelers.length) {
-    beurt = 0;
-  }
+  spelers.splice(index, 1);
 
   // Veiligheid: minimaal 1 speler
   if (spelers.length === 0) {
     alert("Geen spelers meer over. Spel wordt gestopt.");
     stopSpel();
     return;
+  }
+
+  if (wasHuidigeSpeler) {
+    // Verwijderde speler was aan de beurt → volgende speler (zelfde index, of wrap naar 0)
+    beurt = beurt % spelers.length;
+  } else if (index < beurt) {
+    // Verwijderde speler stond vóór de huidige → index schuift 1 naar beneden
+    beurt = beurt - 1;
+  }
+  // Als index > beurt: geen aanpassing nodig, huidige speler blijft op zelfde index
+
+  // Corrigeer ook startVolgordeIndex zodat de leg-startvolgorde klopt
+  if (index < startVolgordeIndex) {
+    startVolgordeIndex = Math.max(0, startVolgordeIndex - 1);
+  } else if (startVolgordeIndex >= spelers.length) {
+    startVolgordeIndex = 0;
   }
 
   renderSpel();

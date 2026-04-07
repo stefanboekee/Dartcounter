@@ -872,29 +872,27 @@ body.light-mode .ctrl-stop { background:#fde8e8; border-color:#f5a5a5; color:#c0
     margin-bottom: 10px;
     text-align: center;
     width: 100%;
-    max-width: 960px;
+    max-width: 1200px;
   }
   .ds-tiles-grid {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
     gap: 10px;
-    justify-content: center;
     width: 100%;
-    max-width: 960px;
+    max-width: 1200px;
   }
 
   .ds-tile {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    padding: 13px 16px;
-    flex: 0 1 215px;
-    min-width: 195px;
+    padding: 10px 12px;
     display: flex;
     flex-direction: column;
     gap: 0;
     transition: border-color 0.2s, background 0.2s;
     position: relative;
+    min-width: 0;
   }
   /* Active player tile */
   .ds-tile-actief {
