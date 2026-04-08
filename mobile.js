@@ -196,8 +196,10 @@ window.renderSpel = function () {
       <div class="actief-naam">🎯 ${s.naam}</div>
       <span class="remove-speler" onclick="verwijderSpeler(${beurt})">✖</span>
     </div>
-    <div class="actief-score">${s.score}</div>
-    ${checkoutHint !== "-" ? `<div class="actief-checkout">🏁 ${checkoutHint}</div>` : '<div class="actief-checkout"></div>'}
+    <div class="actief-score-block">
+      <div class="actief-score">${s.score}</div>
+      ${checkoutHint !== "-" ? `<div class="actief-checkout">🏁 ${checkoutHint}</div>` : ''}
+    </div>
     <div class="actief-stats">
       <div class="stat-chip">Legs<strong>${s.legsGewonnen}/${legsTeWinnen}</strong></div>
       <div class="stat-chip">Pijlen<strong>${s.pijlenGegooid || 0}</strong></div>
@@ -281,8 +283,10 @@ window.renderTeamSpel = function () {
     <div class="actief-naam">🎯 ${team.spelers[spelerIdx] || team.naam}</div>
     <div class="team-naam-sub">${team.naam}</div>
     ${team.spelers.length > 1 ? `<div class="team-spelers-strip">${spelersHtml}</div>` : ''}
-    <div class="actief-score">${team.score}</div>
-    ${checkoutHint !== "-" ? `<div class="actief-checkout">🏁 ${checkoutHint}</div>` : '<div class="actief-checkout"></div>'}
+    <div class="actief-score-block">
+      <div class="actief-score">${team.score}</div>
+      ${checkoutHint !== "-" ? `<div class="actief-checkout">🏁 ${checkoutHint}</div>` : ''}
+    </div>
     <div class="actief-stats">
       <div class="stat-chip">Legs<strong>${team.legsGewonnen}/${legsTeWinnen}</strong></div>
       <div class="stat-chip">Pijlen<strong>${team.pijlenGegooid || 0}</strong></div>

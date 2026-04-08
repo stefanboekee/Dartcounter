@@ -401,6 +401,7 @@ button:active { transform: scale(0.97); }
   border-bottom: 1px solid var(--border);
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  justify-content: center;
 }
 #scorebord::-webkit-scrollbar { display: none; }
 
@@ -441,7 +442,8 @@ button:active { transform: scale(0.97); }
 }
 .actief-naam     { font-size: 1rem; font-weight: 700; color: var(--accent); margin-bottom: 1px; }
 .actief-score    { font-size: 3.2rem; font-weight: 900; line-height: 1; color: var(--text); margin: 2px 0 4px; letter-spacing: -2px; }
-.actief-checkout { font-size: 0.82rem; color: var(--gold); font-weight: 600; margin-bottom: 4px; min-height: 1em; }
+.actief-score-block { display: flex; flex-direction: column; align-items: center; width: 100%; margin: 4px 0 6px; }
+.actief-checkout { font-size: 1.4rem; color: var(--gold); font-weight: 800; text-align: center; margin: 0; letter-spacing: 0.02em; }
 
 .actief-stats {
   display: grid;
@@ -740,11 +742,12 @@ body.light-mode .ctrl-stop { background:#fde8e8; border-color:#f5a5a5; color:#c0
   .ds-stat-label { font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
   .ds-stat-value { font-size: 0.88rem; font-weight: 700; color: var(--text); }
   .ds-checkout-hint {
-    margin-top: 6px;
-    font-size: 0.82rem;
-    font-weight: 700;
+    margin-top: 8px;
+    font-size: 1.3rem;
+    font-weight: 800;
     color: var(--gold);
     letter-spacing: 0.02em;
+    text-align: center;
   }
   .ds-geschiedenis-text {
     font-size: 0.72rem;
@@ -875,11 +878,12 @@ body.light-mode .ctrl-stop { background:#fde8e8; border-color:#f5a5a5; color:#c0
     max-width: 1200px;
   }
   .ds-tiles-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     width: 100%;
-    max-width: 1200px;
+    max-width: 1400px;
+    justify-content: center;
   }
 
   .ds-tile {
@@ -892,7 +896,8 @@ body.light-mode .ctrl-stop { background:#fde8e8; border-color:#f5a5a5; color:#c0
     gap: 0;
     transition: border-color 0.2s, background 0.2s;
     position: relative;
-    min-width: 0;
+    width: 210px;
+    flex-shrink: 0;
   }
   /* Active player tile */
   .ds-tile-actief {

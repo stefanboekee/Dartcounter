@@ -945,12 +945,12 @@ function renderSpel() {
             <div class="ds-stat-value">${actief.hoogsteFinish || '—'}</div>
           </div>
         </div>
-        ${checkout !== '-' ? `<div class="ds-checkout-hint">🎯 Checkout: ${checkout}</div>` : ''}
         <div class="ds-geschiedenis-text">📋 ${hist}</div>
       </div>
 
       <div class="ds-actief-score-wrap">
         <div class="ds-actief-big-score">${actief.score}</div>
+        ${checkout !== '-' ? `<div class="ds-checkout-hint">🎯 ${checkout}</div>` : ''}
         <div class="ds-label-score">resterend</div>
       </div>
 
@@ -1159,11 +1159,11 @@ function renderTeamSpel() {
             <div class="ds-stat-value">${actiefTeam.hoogsteFinish || '—'}</div>
           </div>
         </div>
-        ${checkout !== '-' ? `<div class="ds-checkout-hint">🎯 Checkout: ${checkout}</div>` : ''}
       </div>
 
       <div class="ds-actief-score-wrap">
         <div class="ds-actief-big-score">${actiefTeam.score}</div>
+        ${checkout !== '-' ? `<div class="ds-checkout-hint">🎯 ${checkout}</div>` : ''}
         <div class="ds-label-score">resterend</div>
       </div>
 
