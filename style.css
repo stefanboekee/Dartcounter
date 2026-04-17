@@ -1230,7 +1230,7 @@ body.light-mode .np-confirm { background: linear-gradient(135deg, #d4f5d4, #a8e6
    ======================================================== */
 .dart-toast-wrap {
   position: fixed;
-  top: calc(var(--topbar-h) + 10px);
+  top: auto; top: 10px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 99990;
