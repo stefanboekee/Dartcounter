@@ -1105,8 +1105,176 @@ body.light-mode .ctrl-stop { background:#fde8e8; border-color:#f5a5a5; color:#c0
     min-width: 160px;
   }
   .eind-btn:active { transform: scale(0.97); }
-  .eind-btn-blauw  { background: var(--blue); }
-  .eind-btn-blauw:hover  { background: var(--blue-dark); }
-  .eind-btn-groen  { background: var(--green); }
-  .eind-btn-groen:hover  { background: var(--green-dark); }
+  .eind-btn-blauw  { background: linear-gradient(135deg, var(--blue), var(--blue-dark)); box-shadow: 0 4px 15px rgba(0,123,255,0.4); }
+  .eind-btn-blauw:hover  { filter: brightness(1.12); box-shadow: 0 6px 20px rgba(0,123,255,0.55); }
+  .eind-btn-groen  { background: linear-gradient(135deg, var(--green), var(--green-dark)); box-shadow: 0 4px 15px rgba(40,167,69,0.4); }
+  .eind-btn-groen:hover  { filter: brightness(1.12); box-shadow: 0 6px 20px rgba(40,167,69,0.55); }
+}
+
+/* ========================================================
+   GRADIENT / GLOW / MICRO-ANIMATIES OP KNOPPEN
+   Toegevoegd bovenop bestaande stijlen — niks verwijderd.
+   ======================================================== */
+
+/* Primary & back buttons */
+.primary-btn {
+  background: linear-gradient(135deg, var(--blue), var(--blue-dark)) !important;
+  box-shadow: 0 4px 14px rgba(0,123,255,0.35);
+  transition: filter 0.2s, transform 0.1s, box-shadow 0.2s !important;
+}
+.primary-btn:hover { filter: brightness(1.12); box-shadow: 0 6px 20px rgba(0,123,255,0.5) !important; }
+.primary-btn:active { transform: scale(0.97) !important; box-shadow: 0 2px 8px rgba(0,123,255,0.2) !important; }
+
+.back-btn {
+  background: var(--surface2) !important;
+  color: var(--text-dim) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: none;
+  transition: background 0.2s, color 0.2s, transform 0.1s !important;
+}
+.back-btn:hover { background: var(--border) !important; color: var(--text) !important; }
+.back-btn:active { transform: scale(0.97) !important; }
+
+/* Mode buttons */
+.mode-btn {
+  transition: border-color 0.2s, background 0.2s, transform 0.15s, box-shadow 0.2s !important;
+}
+.mode-btn:hover {
+  box-shadow: 0 4px 18px rgba(88,166,255,0.25) !important;
+  transform: translateY(-2px) !important;
+}
+.mode-btn:active { transform: scale(0.96) translateY(0) !important; }
+
+/* Score knoppen (301 / 501) */
+.scoreknop {
+  background: linear-gradient(135deg, var(--blue), var(--blue-dark)) !important;
+  box-shadow: 0 4px 14px rgba(0,123,255,0.35);
+  transition: filter 0.2s, transform 0.1s, box-shadow 0.2s !important;
+}
+.scoreknop:hover { filter: brightness(1.1); box-shadow: 0 6px 20px rgba(0,123,255,0.5) !important; }
+.scoreknop:active { transform: scale(0.97) !important; }
+
+/* Numpad confirm */
+.np-confirm {
+  background: linear-gradient(135deg, #1a5c1a, #245924) !important;
+  box-shadow: 0 3px 10px rgba(40,167,69,0.3);
+  transition: filter 0.15s, transform 0.1s, box-shadow 0.15s !important;
+}
+.np-confirm:hover { filter: brightness(1.15); box-shadow: 0 5px 14px rgba(40,167,69,0.5) !important; }
+.np-confirm:active { transform: scale(0.93) !important; }
+body.light-mode .np-confirm { background: linear-gradient(135deg, #d4f5d4, #a8e6a8) !important; box-shadow: 0 3px 10px rgba(40,167,69,0.2); }
+
+/* Numpad clear */
+.np-clear {
+  box-shadow: 0 3px 10px rgba(220,53,69,0.2);
+  transition: filter 0.15s, transform 0.1s, box-shadow 0.15s !important;
+}
+.np-clear:hover { filter: brightness(1.2); box-shadow: 0 5px 14px rgba(220,53,69,0.4) !important; }
+
+/* Numpad cijfer knoppen */
+.np-btn:not(.np-clear):not(.np-confirm):hover {
+  background: var(--surface);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* Desktop bevestig knop */
+.ds-bevestig-btn {
+  background: linear-gradient(135deg, var(--blue), var(--blue-dark)) !important;
+  box-shadow: 0 4px 14px rgba(0,123,255,0.35) !important;
+  transition: filter 0.2s, transform 0.1s, box-shadow 0.2s !important;
+}
+.ds-bevestig-btn:hover { filter: brightness(1.12) !important; box-shadow: 0 6px 20px rgba(0,123,255,0.5) !important; }
+.ds-bevestig-btn:active { transform: scale(0.97) !important; }
+
+/* Desktop controls (Stop / Herstel) */
+#controls button {
+  background: linear-gradient(135deg, var(--blue), var(--blue-dark)) !important;
+  box-shadow: 0 4px 14px rgba(0,123,255,0.3);
+  transition: filter 0.2s, transform 0.1s !important;
+}
+#controls button:hover { filter: brightness(1.1) !important; }
+
+/* Eindscherm knoppen mobile */
+.btn-opnieuw {
+  background: linear-gradient(135deg, var(--blue), var(--blue-dark)) !important;
+  box-shadow: 0 4px 14px rgba(0,123,255,0.35);
+  transition: filter 0.2s, transform 0.1s !important;
+}
+.btn-opnieuw:hover { filter: brightness(1.1) !important; }
+.btn-speler {
+  background: linear-gradient(135deg, var(--green), var(--green-dark)) !important;
+  box-shadow: 0 4px 14px rgba(40,167,69,0.35);
+  transition: filter 0.2s, transform 0.1s !important;
+}
+.btn-speler:hover { filter: brightness(1.1) !important; }
+
+/* Quick score knoppen */
+.quick-score-btn {
+  background: linear-gradient(135deg, var(--green), var(--green-dark)) !important;
+  box-shadow: 0 3px 10px rgba(40,167,69,0.25);
+  transition: filter 0.15s, transform 0.1s, box-shadow 0.15s !important;
+}
+.quick-score-btn:hover { filter: brightness(1.1); box-shadow: 0 5px 14px rgba(40,167,69,0.45) !important; }
+.quick-score-btn-gold {
+  background: linear-gradient(135deg, var(--gold), #c7a500) !important;
+  box-shadow: 0 3px 10px rgba(255,215,0,0.25);
+}
+.quick-score-btn-gold:hover { box-shadow: 0 5px 14px rgba(255,215,0,0.45) !important; }
+
+/* Ctrl knoppen (mobiel) */
+.ctrl-btn:hover { background: var(--surface); }
+.ctrl-stop:hover { background: #3a1f1f !important; }
+
+/* ========================================================
+   TOAST NOTIFICATIES
+   ======================================================== */
+.dart-toast-wrap {
+  position: fixed;
+  top: calc(var(--topbar-h) + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99990;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.dart-toast {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 9px 20px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  white-space: nowrap;
+  animation: dartToastIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both,
+             dartToastOut 0.2s ease-in 2.3s both;
+}
+.dart-toast.toast-success { border-color: rgba(40,167,69,0.6);  color: #4caf50; }
+.dart-toast.toast-error   { border-color: rgba(220,53,69,0.6);  color: #f44336; }
+.dart-toast.toast-warn    { border-color: rgba(255,215,0,0.6);  color: var(--gold); }
+
+@keyframes dartToastIn {
+  from { opacity: 0; transform: translateY(-10px) scale(0.9); }
+  to   { opacity: 1; transform: translateY(0)     scale(1);   }
+}
+@keyframes dartToastOut {
+  from { opacity: 1; }
+  to   { opacity: 0; transform: translateY(-6px) scale(0.95); }
+}
+
+/* ========================================================
+   CONFETTI CANVAS
+   ======================================================== */
+#dartConfettiCanvas {
+  position: fixed !important;
+  top: 0 !important; left: 0 !important;
+  width: 100vw !important; height: 100vh !important;
+  pointer-events: none;
+  z-index: 99999;
+  margin: 0 !important;
 }

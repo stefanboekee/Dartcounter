@@ -375,7 +375,8 @@ if (score === 67) {
 
 
   if (isNaN(score) || score < 0 || score > 180 || ongeldigeScores.includes(score)) {
-    alert("Voer een geldige score in tussen 0 en 180.");
+    if (typeof dartToast === 'function') dartToast('⚠️ Ongeldige score (0–180)', 'error');
+    else alert("Voer een geldige score in tussen 0 en 180.");
     if (input) {
       input.value = '';
       input.focus();
@@ -463,7 +464,11 @@ if (score === 67) {
      ❌ BUST
      ========================= */
   else if (nieuweScore < 0 || nieuweScore === 1) {
-    alert("Bust!");
+    if (typeof dartToast === 'function') dartToast('💥 Bust!', 'error');
+    else alert("Bust!");
+    speler.geschiedenis.push(0);
+    speler.totaalGeschiedenis.push(0);
+    beurt = (beurt + 1) % spelers.length;
   }
 
   /* =========================
@@ -528,7 +533,8 @@ function verwerkTeamBeurt(tIndex) {
   const score = parseInt(input?.value || "0", 10);
 
   if (isNaN(score) || score < 0 || score > 180 || ongeldigeScores.includes(score)) {
-    alert("Voer een geldige score in tussen 0 en 180.");
+    if (typeof dartToast === 'function') dartToast('⚠️ Ongeldige score (0–180)', 'error');
+    else alert("Voer een geldige score in tussen 0 en 180.");
     if (input) {
       input.value = '';
       input.focus();
@@ -622,7 +628,12 @@ function verwerkTeamBeurt(tIndex) {
      ❌ BUST
      ========================= */
   else if (nieuweScore < 0 || nieuweScore === 1) {
-    alert("Bust!");
+    if (typeof dartToast === 'function') dartToast('💥 Bust!', 'error');
+    else alert("Bust!");
+    team.geschiedenis.push(0);
+    team.totaalGeschiedenis.push(0);
+    globaleBeurtPositie++;
+    beurt = teamBeurtInfo(globaleBeurtPositie).teamIndex;
   }
 
   /* =========================
@@ -741,7 +752,8 @@ function herstartSpel() {
  */
 function herstelLaatsteScore() {
   if (herstelGeschiedenis.length === 0) {
-    alert("Niets om te herstellen.");
+    if (typeof dartToast === 'function') dartToast('Niets om te herstellen', 'warn');
+    else alert("Niets om te herstellen.");
     return;
   }
 
@@ -779,6 +791,7 @@ function herstelLaatsteScore() {
       `Herstel: ${teamBeurtInfo(globaleBeurtPositie).spelerNaam} (${teams[beurt].naam}) is weer aan de beurt.`
     );
     suppressNextScoreAnnouncement = true;
+    if (typeof dartToast === 'function') dartToast('↩ Score hersteld', 'warn');
     renderTeamSpel();
 
   } else if (!teamMode && laatste?.index !== undefined) {
@@ -808,6 +821,7 @@ function herstelLaatsteScore() {
 
     sessieGeschiedenis.push(`Herstel: ${spelers[beurt].naam} is weer aan de beurt.`);
     suppressNextScoreAnnouncement = true;
+    if (typeof dartToast === 'function') dartToast('↩ Score hersteld', 'warn');
     renderSpel();
   }
 }

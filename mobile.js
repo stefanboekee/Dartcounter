@@ -314,12 +314,107 @@ window.renderTeamSpel = function () {
 };
 
 /* ====================================================
+   TOAST NOTIFICATIES
+   ==================================================== */
+(function() {
+  let _toastWrap = null;
+
+  function _getWrap() {
+    if (!_toastWrap || !document.body.contains(_toastWrap)) {
+      _toastWrap = document.createElement('div');
+      _toastWrap.className = 'dart-toast-wrap';
+      document.body.appendChild(_toastWrap);
+    }
+    return _toastWrap;
+  }
+
+  window.dartToast = function(tekst, type, duur) {
+    duur = duur || 2500;
+    const wrap = _getWrap();
+    const el = document.createElement('div');
+    el.className = 'dart-toast' + (type ? ' toast-' + type : '');
+    el.textContent = tekst;
+    wrap.appendChild(el);
+    setTimeout(() => { el.remove(); }, duur + 200);
+  };
+})();
+
+/* ====================================================
+   CONFETTI
+   ==================================================== */
+(function() {
+  let _animId = null;
+
+  window.dartConfettiStart = function() {
+    let canvas = document.getElementById('dartConfettiCanvas');
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.id = 'dartConfettiCanvas';
+      canvas.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:99999;margin:0;';
+      document.body.appendChild(canvas);
+    }
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext('2d');
+
+    const kleuren = ['#ffd700','#007bff','#28a745','#dc3545','#9c27b0','#ff9800','#ffffff','#58a6ff'];
+    const deeltjes = Array.from({ length: 130 }, () => ({
+      x:  Math.random() * canvas.width,
+      y:  Math.random() * canvas.height - canvas.height,
+      w:  Math.random() * 8 + 4,
+      h:  Math.random() * 5 + 3,
+      kleur: kleuren[Math.floor(Math.random() * kleuren.length)],
+      rot: Math.random() * Math.PI * 2,
+      rotV: (Math.random() - 0.5) * 0.18,
+      vx: (Math.random() - 0.5) * 2.5,
+      vy: Math.random() * 3 + 1.8,
+    }));
+
+    if (_animId) cancelAnimationFrame(_animId);
+
+    function teken() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      deeltjes.forEach(d => {
+        ctx.save();
+        ctx.translate(d.x, d.y);
+        ctx.rotate(d.rot);
+        ctx.fillStyle = d.kleur;
+        ctx.globalAlpha = 0.85;
+        ctx.fillRect(-d.w / 2, -d.h / 2, d.w, d.h);
+        ctx.restore();
+        d.x   += d.vx;
+        d.y   += d.vy;
+        d.rot += d.rotV;
+        if (d.y > canvas.height + 20) { d.y = -10; d.x = Math.random() * canvas.width; }
+      });
+      _animId = requestAnimationFrame(teken);
+    }
+    teken();
+    setTimeout(window.dartConfettiStop, 4500);
+  };
+
+  window.dartConfettiStop = function() {
+    if (_animId) { cancelAnimationFrame(_animId); _animId = null; }
+    const canvas = document.getElementById('dartConfettiCanvas');
+    if (canvas) { canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height); }
+  };
+
+  window.addEventListener('resize', () => {
+    const canvas = document.getElementById('dartConfettiCanvas');
+    if (canvas && _animId) { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  });
+})();
+
+/* ====================================================
    OVERRIDE: toonEindscherm
    ==================================================== */
 const _origToonEindscherm = window.toonEindscherm;
 
 window.toonEindscherm = function (winnaar, deelnemers) {
   _setGameMenuItems(false);
+
+  // Confetti op zowel desktop als mobiel
+  dartConfettiStart();
 
   if (!isMobile()) {
     _origToonEindscherm.call(this, winnaar, deelnemers);
@@ -387,6 +482,7 @@ window.toonEindscherm = function (winnaar, deelnemers) {
 const _origOpnieuwSpelen = window.opnieuwSpelen;
 
 window.opnieuwSpelen = function () {
+  dartConfettiStop();
   document.getElementById("eindscherm").style.display = "none";
   numpadWaarde = "";
   updateScoreDisplay();
