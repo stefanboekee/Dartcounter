@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Dartcounter V1.6.7.1</title>
   <link rel="stylesheet" href="style.css">
+  <!-- ▼ NIEUW: statistieken stylesheet -->
+  <link rel="stylesheet" href="stats.css">
   <link rel="icon" href="favicon.png" type="image/png">
 </head>
 <body>
@@ -35,6 +37,7 @@
       <button class="menu-item" onclick="menuToggleTheme()">
         <span id="themeIcon">🌙</span> Licht / Donker
       </button>
+      <!-- ▼ NIEUW: "📊 Statistieken" wordt hier automatisch ingevoegd door stats.js -->
       <button class="menu-item" id="menuSpelerBtn" onclick="menuNieuweSpeler()" style="display:none;">
         ➕ Speler toevoegen
       </button>
@@ -61,6 +64,12 @@
     <button class="mode-btn" onclick="selecteerModus('teams')">
       <span class="mode-icon">👥</span>
       <span>Teams</span>
+    </button>
+  </div>
+  <div class="mode-buttons" style="margin-top: 12px;">
+    <button class="mode-btn mode-btn-stats" onclick="toonStatsScherm()">
+      <span class="mode-icon">📊</span>
+      <span>Statistieken</span>
     </button>
   </div>
 </div>
@@ -134,7 +143,12 @@
 <!-- Kept for JS compatibility, hidden -->
 <div id="addPlayerSmallBtn" style="display:none;"></div>
 
+<!-- ▼ NIEUW: statistieken overlay (verborgen tot de gebruiker erop klikt) -->
+<div id="statsScherm" style="display:none;"></div>
+
 <script src="script.js"></script>
 <script src="mobile.js"></script>
+<!-- ▼ NIEUW: statistieken module — laadt als laatste zodat de override-keten klopt -->
+<script src="stats.js"></script>
 </body>
 </html>
