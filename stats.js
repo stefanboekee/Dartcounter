@@ -1,20 +1,104 @@
 /* ==========================================
-   Dartcounter — stats.js  v3
-   Persistente spelersstatistieken via localStorage.
+   Dartcounter — stats.js  v4
+   Persistente spelersstatistieken:
+     1. localStorage  → snelle cache, werkt offline
+     2. Netlify Blobs → blijft na wissen browserdata
 
-   MECHANISME (betrouwbaar, geen playSound-hack):
-   - Override renderSpel + renderTeamSpel om spelstaat
-     na elke render te lezen
-   - Detecteert leg-wins door legsGewonnen te vergelijken
-     met de vorige render
-   - Pijlen worden bijgehouden via totaalGeschiedenisLen
-     (elke +1 = 1 beurt = 3 pijlen)
-   - toonEindscherm-hook slaat de matchafsluiting op
-
-   OPSLAG: localStorage → "dartcounter_stats"
+   MECHANISME leg-detectie:
+   - Override renderSpel + renderTeamSpel
+   - Vergelijk legsGewonnen na elke render
+   - Pijlen via totaalGeschiedenisLen (×3 per beurt)
+   - toonEindscherm-hook voor matchafsluiting
    ========================================== */
 
 const STATS_KEY = 'dartcounter_stats';
+
+/* ====================================================
+   ☁️  CLOUD SYNC — configuratie
+   Vul CLOUD_API_KEY in als je STATS_API_KEY hebt
+   ingesteld in Netlify (anders leeg laten).
+   ==================================================== */
+const CLOUD_ENDPOINT = '/.netlify/functions/stats';
+const CLOUD_API_KEY  = '';   // ← optioneel: zelfde waarde als STATS_API_KEY in Netlify
+
+/* ====================================================
+   CLOUD SYNC — functies
+   ==================================================== */
+
+/** Haalt stats op van de Netlify function. Geeft null bij fout. */
+async function _cloudLaden() {
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (CLOUD_API_KEY) headers['X-API-Key'] = CLOUD_API_KEY;
+    const res = await fetch(CLOUD_ENDPOINT, { headers });
+    if (!res.ok) return null;
+    const text = await res.text();
+    return JSON.parse(text || '{}');
+  } catch { return null; }
+}
+
+/** Stuurt alle stats naar de Netlify function (fire-and-forget). */
+async function _cloudOpslaan(data) {
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (CLOUD_API_KEY) headers['X-API-Key'] = CLOUD_API_KEY;
+    await fetch(CLOUD_ENDPOINT, {
+      method:  'POST',
+      headers,
+      body:    JSON.stringify(data),
+    });
+  } catch { /* offline of fout → lokaal al opgeslagen, geen actie */ }
+}
+
+/**
+ * Samenvoegen van lokale en cloud data.
+ * Cloud wint voor gedeelde sessies; lokale extra sessies worden bewaard.
+ */
+function _mergeStats(lokaal, cloud) {
+  if (!cloud || Object.keys(cloud).length === 0) return lokaal;
+  const merged = JSON.parse(JSON.stringify(cloud)); // deep copy van cloud
+
+  Object.keys(lokaal).forEach(naam => {
+    if (!merged[naam]) {
+      merged[naam] = lokaal[naam];
+    } else {
+      // Combineer games, dedupliceer op _sessieId (cloud heeft voorrang)
+      const cloudGames = merged[naam].games || [];
+      const lokaalGames = lokaal[naam].games || [];
+      const byId = {};
+      cloudGames.forEach(g => { if (g._sessieId) byId[g._sessieId] = g; });
+      lokaalGames.forEach(g => {
+        if (g._sessieId && !byId[g._sessieId]) byId[g._sessieId] = g;
+        else if (!g._sessieId) cloudGames.push(g); // geen sessie-ID: altijd toevoegen
+      });
+      merged[naam].games = Object.values(byId).sort((a, b) =>
+        (a.datum || '').localeCompare(b.datum || '')
+      );
+    }
+  });
+
+  return merged;
+}
+
+/** Laadt cloud-data en synchroniseert met localStorage. Stille achtergrondtaak. */
+async function _syncVanCloud() {
+  const cloudData = await _cloudLaden();
+  if (!cloudData) return; // offline of fout
+
+  const lokaalData = statsLaden();
+  const merged     = _mergeStats(lokaalData, cloudData);
+
+  // Alleen opslaan als er iets veranderd is
+  if (JSON.stringify(merged) !== JSON.stringify(lokaalData)) {
+    _statsOpslaanLokaal(merged);
+  }
+}
+
+/** Sla op in localStorage (synchroon, snel). */
+function _statsOpslaanLokaal(data) {
+  try   { localStorage.setItem(STATS_KEY, JSON.stringify(data)); }
+  catch (e) { console.warn('Lokale opslag mislukt:', e); }
+}
 
 /* ====================================================
    SORTEER-STATUS voor de ranglijst-tabel
@@ -218,14 +302,21 @@ function _upsertGame(winnaar) {
 /* ====================================================
    STORAGE HELPERS
    ==================================================== */
+
+/** Laad stats uit localStorage (synchroon). */
 function statsLaden() {
   try   { return JSON.parse(localStorage.getItem(STATS_KEY)) || {}; }
   catch { return {}; }
 }
 
+/**
+ * Sla stats op:
+ * 1. localStorage (direct, synchroon)
+ * 2. Netlify Blobs via function (async, fire-and-forget)
+ */
 function statsOpslaan(data) {
-  try   { localStorage.setItem(STATS_KEY, JSON.stringify(data)); }
-  catch (e) { console.warn('Stats opslaan mislukt:', e); }
+  _statsOpslaanLokaal(data);
+  _cloudOpslaan(data); // geen await — gameplay wordt niet vertraagd
 }
 
 function _getDeelnemers() {
@@ -239,6 +330,9 @@ function _getDeelnemers() {
    MENU-ITEM TOEVOEGEN
    ==================================================== */
 document.addEventListener('DOMContentLoaded', () => {
+  // Synchroniseer op de achtergrond met cloud-opslag
+  _syncVanCloud();
+
   const menu = document.getElementById('dropdownMenu');
   if (!menu) return;
 
