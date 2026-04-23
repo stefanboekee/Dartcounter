@@ -18,8 +18,8 @@ const STATS_KEY = 'dartcounter_stats';
    Vul CLOUD_API_KEY in als je STATS_API_KEY hebt
    ingesteld in Netlify (anders leeg laten).
    ==================================================== */
-const CLOUD_ENDPOINT = '/.netlify/functions/stats';
-const CLOUD_API_KEY  = '';   // ← optioneel: zelfde waarde als STATS_API_KEY in Netlify
+const CLOUD_ENDPOINT = null; // JSONBin gebruikt eigen functies hieronder
+const CLOUD_API_KEY  = '';   // niet meer nodig
 
 /* ====================================================
    CLOUD SYNC — functies
