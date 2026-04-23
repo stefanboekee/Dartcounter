@@ -87,16 +87,24 @@ function _mergeStats(lokaal, cloud) {
   return merged;
 }
 
-/** Laadt cloud-data en synchroniseert met localStorage. Stille achtergrondtaak. */
+/** Laadt cloud-data, synchroniseert met localStorage, en uploadt lokale data die de cloud mist. */
 async function _syncVanCloud() {
-  const cloudData = await _cloudLaden();
-  if (!cloudData) return;
-
   const lokaalData = statsLaden();
-  const merged     = _mergeStats(lokaalData, cloudData);
+  const cloudData  = await _cloudLaden();
 
+  // Geen verbinding of fout — werk alleen met lokale data
+  if (cloudData === null) return;
+
+  const merged = _mergeStats(lokaalData, cloudData);
+
+  // Lokaal bijwerken als cloud nieuwe data had
   if (JSON.stringify(merged) !== JSON.stringify(lokaalData)) {
     _statsOpslaanLokaal(merged);
+  }
+
+  // Cloud bijwerken als lokaal nieuwe data had die cloud miste
+  if (JSON.stringify(merged) !== JSON.stringify(cloudData)) {
+    await _cloudOpslaan(merged);
   }
 }
 
