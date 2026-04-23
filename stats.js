@@ -23,8 +23,8 @@ const STATS_KEY = 'dartcounter_stats';
 /* ====================================================
    ☁️  JSONBIN CONFIGURATIE  ← hier invullen
    ==================================================== */
-const JSONBIN_BIN_ID  = '69e9e583856a68218963b4fb';   // ← jouw Bin ID, bijv. '64abc123def456'
-const JSONBIN_API_KEY = '$2a$10$9rxIAAcuAGZdrO8/ESPq9OWcZBMxiBxIojhkV8gM/c4KALkwp5Gn6';   // ← jouw API key, bijv. '$2a$10$abc...'
+const JSONBIN_BIN_ID  = '69e9e583856a68218963b4fb';
+const JSONBIN_API_KEY = '$2a$10$9rxIAAcuAGZdrO8/ESPq9OWcZBMxiBxIojhkV8gM/c4KALkwp5Gn6';
 
 /* ====================================================
    CLOUD SYNC — functies
