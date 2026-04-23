@@ -1,8 +1,15 @@
 /* ==========================================
-   Dartcounter — stats.js  v4
+   Dartcounter — stats.js  v5
    Persistente spelersstatistieken:
      1. localStorage  → snelle cache, werkt offline
-     2. Netlify Blobs → blijft na wissen browserdata
+     2. JSONBin.io    → blijft na wissen browserdata
+
+   SETUP (eenmalig, gratis):
+     1. Maak account op jsonbin.io
+     2. Klik "Create Bin" → plak {} → sla op
+     3. Kopieer het Bin ID uit de URL
+     4. Ga naar API Keys → maak key aan → kopieer
+     5. Vul JSONBIN_BIN_ID en JSONBIN_API_KEY hieronder in
 
    MECHANISME leg-detectie:
    - Override renderSpel + renderTeamSpel
@@ -14,40 +21,41 @@
 const STATS_KEY = 'dartcounter_stats';
 
 /* ====================================================
-   ☁️  CLOUD SYNC — configuratie
-   Vul CLOUD_API_KEY in als je STATS_API_KEY hebt
-   ingesteld in Netlify (anders leeg laten).
+   ☁️  JSONBIN CONFIGURATIE  ← hier invullen
    ==================================================== */
-const CLOUD_ENDPOINT = null; // JSONBin gebruikt eigen functies hieronder
-const CLOUD_API_KEY  = '';   // niet meer nodig
+const JSONBIN_BIN_ID  = '69e9e583856a68218963b4fb';   // ← jouw Bin ID, bijv. '64abc123def456'
+const JSONBIN_API_KEY = '$2a$10$9rxIAAcuAGZdrO8/ESPq9OWcZBMxiBxIojhkV8gM/c4KALkwp5Gn6';   // ← jouw API key, bijv. '$2a$10$abc...'
 
 /* ====================================================
    CLOUD SYNC — functies
    ==================================================== */
 
-/** Haalt stats op van de Netlify function. Geeft null bij fout. */
+/** Haalt stats op van JSONBin. Geeft null bij fout of lege config. */
 async function _cloudLaden() {
+  if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) return null;
   try {
-    const headers = { 'Content-Type': 'application/json' };
-    if (CLOUD_API_KEY) headers['X-API-Key'] = CLOUD_API_KEY;
-    const res = await fetch(CLOUD_ENDPOINT, { headers });
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+      headers: { 'X-Master-Key': JSONBIN_API_KEY }
+    });
     if (!res.ok) return null;
-    const text = await res.text();
-    return JSON.parse(text || '{}');
+    const json = await res.json();
+    return json.record || null;
   } catch { return null; }
 }
 
-/** Stuurt alle stats naar de Netlify function (fire-and-forget). */
+/** Stuurt alle stats naar JSONBin (fire-and-forget). */
 async function _cloudOpslaan(data) {
+  if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) return;
   try {
-    const headers = { 'Content-Type': 'application/json' };
-    if (CLOUD_API_KEY) headers['X-API-Key'] = CLOUD_API_KEY;
-    await fetch(CLOUD_ENDPOINT, {
-      method:  'POST',
-      headers,
-      body:    JSON.stringify(data),
+    await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+      method:  'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': JSONBIN_API_KEY,
+      },
+      body: JSON.stringify(data),
     });
-  } catch { /* offline of fout → lokaal al opgeslagen, geen actie */ }
+  } catch { /* offline of fout — lokaal al opgeslagen */ }
 }
 
 /**
@@ -56,20 +64,19 @@ async function _cloudOpslaan(data) {
  */
 function _mergeStats(lokaal, cloud) {
   if (!cloud || Object.keys(cloud).length === 0) return lokaal;
-  const merged = JSON.parse(JSON.stringify(cloud)); // deep copy van cloud
+  const merged = JSON.parse(JSON.stringify(cloud));
 
   Object.keys(lokaal).forEach(naam => {
     if (!merged[naam]) {
       merged[naam] = lokaal[naam];
     } else {
-      // Combineer games, dedupliceer op _sessieId (cloud heeft voorrang)
       const cloudGames = merged[naam].games || [];
       const lokaalGames = lokaal[naam].games || [];
       const byId = {};
       cloudGames.forEach(g => { if (g._sessieId) byId[g._sessieId] = g; });
       lokaalGames.forEach(g => {
         if (g._sessieId && !byId[g._sessieId]) byId[g._sessieId] = g;
-        else if (!g._sessieId) cloudGames.push(g); // geen sessie-ID: altijd toevoegen
+        else if (!g._sessieId) cloudGames.push(g);
       });
       merged[naam].games = Object.values(byId).sort((a, b) =>
         (a.datum || '').localeCompare(b.datum || '')
@@ -83,12 +90,11 @@ function _mergeStats(lokaal, cloud) {
 /** Laadt cloud-data en synchroniseert met localStorage. Stille achtergrondtaak. */
 async function _syncVanCloud() {
   const cloudData = await _cloudLaden();
-  if (!cloudData) return; // offline of fout
+  if (!cloudData) return;
 
   const lokaalData = statsLaden();
   const merged     = _mergeStats(lokaalData, cloudData);
 
-  // Alleen opslaan als er iets veranderd is
   if (JSON.stringify(merged) !== JSON.stringify(lokaalData)) {
     _statsOpslaanLokaal(merged);
   }
