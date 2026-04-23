@@ -1,0 +1,8 @@
+{
+  "name": "dartcounter",
+  "version": "1.0.0",
+  "description": "Dartcounter met persistente statistieken via Netlify Blobs",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}
