@@ -386,7 +386,8 @@ function sluitStatsScherm() {
 function renderStatsOverzicht() {
   const scherm = document.getElementById('statsScherm');
   const db     = statsLaden();
-  const namen  = Object.keys(db);
+  // Filter: alleen echte speler-entries (hebben een games array)
+  const namen  = Object.keys(db).filter(k => db[k] && Array.isArray(db[k].games));
 
   let html = `
     <div class="stats-header">
